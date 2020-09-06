@@ -1,5 +1,5 @@
-#ifndef PROPCA_INCLUDE_ARGUMENTS_H_
-#define PROPCA_INCLUDE_ARGUMENTS_H_
+#ifndef PROPCA_ARGUMENTS_H_
+#define PROPCA_ARGUMENTS_H_
 
 
 #include <fstream>
@@ -328,4 +328,4 @@ void parse_args(int argc, char const *argv[]) {
 	}
 }
 
-#endif  // PROPCA_INCLUDE_ARGUMENTS_H_
+#endif  // PROPCA_ARGUMENTS_H_

@@ -1,5 +1,5 @@
-#ifndef PROPCA_INCLUDE_HELPER_H_
-#define PROPCA_INCLUDE_HELPER_H_
+#ifndef PROPCA_HELPER_H_
+#define PROPCA_HELPER_H_
 
 
 #include "time.h"
@@ -46,4 +46,4 @@ void print_time() {
 	cout << "Time = " << t  << " : ";
 }
 
-#endif  // PROPCA_INCLUDE_HELPER_H_
+#endif  // PROPCA_HELPER_H_

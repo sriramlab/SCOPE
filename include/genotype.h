@@ -1,5 +1,5 @@
-#ifndef PROPCA_INCLUDE_GENOTYPE_H_
-#define PROPCA_INCLUDE_GENOTYPE_H_
+#ifndef PROPCA_GENOTYPE_H_
+#define PROPCA_GENOTYPE_H_
 
 #include <string>
 #include <vector>
@@ -63,4 +63,4 @@ class genotype {
 								 bool var_normalize);
 };
 
-#endif  // PROPCA_INCLUDE_GENOTYPE_H_
+#endif  // PROPCA_GENOTYPE_H_
