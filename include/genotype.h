@@ -1,5 +1,5 @@
-#ifndef PROPCA_INCLUDE_GENOTYPE_H
-#define PROPCA_INCLUDE_GENOTYPE_H
+#ifndef PROPCA_INCLUDE_GENOTYPE_H_
+#define PROPCA_INCLUDE_GENOTYPE_H_
 
 #include <string>
 #include <vector>
