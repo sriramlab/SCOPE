@@ -1,11 +1,15 @@
-#ifndef GENOTYPE_H
-#define GENOTYPE_H
-#include <bits/stdc++.h>
-#include "storage.h"
+#ifndef PROPCA_INCLUDE_GENOTYPE_H
+#define PROPCA_INCLUDE_GENOTYPE_H
+
+#include <string>
+#include <vector>
+
 #include <Eigen/Dense>
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <Eigen/SVD>
+
+#include "storage.h"
 
 
 class genotype {
@@ -13,9 +17,8 @@ class genotype {
 	std::vector< std::vector <bool> > lsb;
 	std::vector<int> columnsum;
 	std::vector<double> columnmeans;
-	
-	public:	
 
+	public:
 		unsigned char mask;
     	int wordsize;
 	    unsigned int unitsperword;
@@ -33,34 +36,31 @@ class genotype {
 
 		std::vector< std::vector<int> > not_O_j;
 		std::vector< std::vector<int> > not_O_i;
-		
+
 		void init_means(bool is_missing);
 
 		float get_observed_pj(const std::string &line);
 		float get_observed_pj(const unsigned char* line);
 
-		void read_txt_naive(std::string filename,bool allow_missing);
-		
-		void read_txt_mailman (std::string filename,bool allow_missing);
+		void read_txt_naive(std::string filename, bool allow_missing);
+		void read_txt_mailman(std::string filename, bool allow_missing);
 
-		void read_plink (std::string filenameprefix, bool allow_missing,bool mailman_mode);
-		void read_bed (std::string filename, bool allow_missing, bool mailman_mode )  ;
-		void read_bed_mailman (std::string filename,bool allow_missing )  ;
-		void read_bed_naive (std::string filename ,bool allow_missing)  ;
+		void read_plink(std::string filenameprefix, bool allow_missing, bool mailman_mode);
+		void read_bed(std::string filename, bool allow_missing, bool mailman_mode);
+		void read_bed_mailman(std::string filename, bool allow_missing);
+		void read_bed_naive(std::string filename, bool allow_missing);
 
 		int countlines(std::string filename);
-		void set_metadata () ;
+		void set_metadata();
 
-
-		double get_geno(int snpindex,int indvindex,bool var_normalize);
+		double get_geno(int snpindex, int indvindex, bool var_normalize);
 		double get_col_mean(int snpindex);
-		double get_col_sum(int snpindex);		
-		double get_col_std(int snpindex);		
-		void update_col_mean(int snpindex,double value);
+		double get_col_sum(int snpindex);
+		double get_col_std(int snpindex);
+		void update_col_mean(int snpindex, double value);
 
-		void generate_eigen_geno(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &geno_matrix,bool var_normalize);
-
-
+		void generate_eigen_geno(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &geno_matrix,
+								 bool var_normalize);
 };
 
-#endif
+#endif  // PROPCA_INCLUDE_GENOTYPE_H_

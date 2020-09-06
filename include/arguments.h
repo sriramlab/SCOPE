@@ -237,7 +237,7 @@ void parse_args(int argc, char const *argv[]) {
 		command_line_opts.l = cfg.getValueOfKey<int>("l", command_line_opts.num_of_evec);
 		command_line_opts.OUTPUT_PATH = cfg.getValueOfKey<string>("output_path", string("fastppca_"));
 		command_line_opts.GENOTYPE_FILE_PATH = cfg.getValueOfKey<string>("genotype", string(""));
-		command_line_opts.convergence_limit =cfg.getValueOfKey<double>("convergence_limit", -1.0);
+		command_line_opts.convergence_limit = cfg.getValueOfKey<double>("convergence_limit", -1.0);
 		command_line_opts.var_normalize = cfg.getValueOfKey<bool>("var_normalize", false);
 		command_line_opts.accelerated_em = cfg.getValueOfKey<int>("accelerated_em", 0);
 		command_line_opts.memory_efficient = cfg.getValueOfKey<bool>("memory_efficient", false);
