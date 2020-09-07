@@ -20,6 +20,9 @@
 #include "helper.h"
 #include "storage.h"
 
+using namespace std;
+// Something strange happens when I delete this it doesn't get the same answer... 
+
 
 #if SSE_SUPPORT == 1
 	#define fastmultiply fastmultiply_sse
@@ -138,7 +141,7 @@ void multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtra
 	nthreads = (nthreads > g.Nsegments_hori) ? g.Nsegments_hori: nthreads;
 
 	std::thread th[nthreads];
-	int perthread = g.Nsegments_hori/nthreads;
+	int perthread = g.Nsegments_hori / nthreads;
 	// std::cout << g.Nsegments_hori << "\t" << nthreads << "\t" << perthread << std::endl;
 	int t = 0;
 	for (; t < nthreads - 1; t++) {
@@ -217,7 +220,7 @@ void multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &res, bool
 	#if DEBUG == 1
 		if (debug) {
 			print_time();
-			cout << "Starting mailman on postmultiply" << endl;
+			std::cout << "Starting mailman on postmultiply" << std::endl;
 		}
 	#endif
 
@@ -227,7 +230,7 @@ void multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &res, bool
 
 	std::thread th[nthreads];
 	int perthread = g.Nsegments_hori / nthreads;
-	// cout << "post: " << g.segment_size_hori << "\t" << g.Nsegments_hori << "\t" << nthreads << "\t" << perthread << endl;
+	// std::cout << "post: " << g.segment_size_hori << "\t" << g.Nsegments_hori << "\t" << nthreads << "\t" << perthread << std::endl;
 	int t = 0;
 	for (; t < nthreads - 1; t++) {
 	// std::cout << "Launching " << t << std::endl;
@@ -430,7 +433,7 @@ MatrixXdr run_EM_not_missing(MatrixXdr &c_orig) {
 	#if DEBUG == 1
 		if (debug) {
 			print_time();
-			cout << "Enter: run_EM_not_missing" << endl;
+			std::cout << "Enter: run_EM_not_missing" << std::endl;
 		}
 	#endif
 
@@ -477,7 +480,7 @@ MatrixXdr run_EM_not_missing(MatrixXdr &c_orig) {
 	#if DEBUG == 1
 		if (debug) {
 			print_time();
-			cout << "Exiting: run_EM_not_missing" << endl;
+			std::cout << "Exiting: run_EM_not_missing" << std::endl;
 		}
 	#endif
 
@@ -517,7 +520,7 @@ MatrixXdr run_EM_missing(MatrixXdr &c_orig) {
 	#if DEBUG == 1
 		if (debug) {
 			std::ofstream x_file;
-			x_file.open((std::string(command_line_opts.OUTPUT_PATH) + string("x_in_fn_vals.txt")).c_str());
+			x_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("x_in_fn_vals.txt")).c_str());
 			x_file << std::setprecision(15) << mu << std::endl;
 			x_file.close();
 		}
