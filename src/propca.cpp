@@ -20,10 +20,6 @@
 #include "helper.h"
 #include "storage.h"
 
-using namespace std;
-// Something strange happens when I delete this it doesn't get the same answer... 
-
-
 #if SSE_SUPPORT == 1
 	#define fastmultiply fastmultiply_sse
 	#define fastmultiply_pre fastmultiply_pre_sse
@@ -859,7 +855,7 @@ int main(int argc, char const *argv[]) {
 				std::cout << "Iteration " << i + 1 << "  " << std::setprecision(15) << e.first << "  " << e.second << std::endl;
 			}
 
-			if (abs(e.first-prev_error.first) <= convergence_limit) {
+			if (std::abs(e.first-prev_error.first) <= convergence_limit) {
 				std::cout << "Breaking after " << i + 1 << " iterations" << std::endl;
 				break;
 			}
