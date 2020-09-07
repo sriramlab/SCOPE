@@ -37,13 +37,13 @@ void * malloc_double_align(size_t n, unsigned int a /*alignment*/, double * &out
 void print_timenl() {
 	clock_t c = clock();
 	double t = static_cast<double>(c) / CLOCKS_PER_SEC;
-	cout << "Time = " << t << endl;
+	std::cout << "Time = " << t << std::endl;
 }
 
 void print_time() {
 	clock_t c = clock();
 	double t = static_cast<double>(c) / CLOCKS_PER_SEC;
-	cout << "Time = " << t  << " : ";
+	std::cout << "Time = " << t  << " : ";
 }
 
 #endif  // PROPCA_HELPER_H_

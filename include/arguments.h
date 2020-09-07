@@ -3,6 +3,7 @@
 
 
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <string>
@@ -47,14 +48,14 @@ extern options command_line_opts;
 
 
 void printCorrectUsage(void) {
-	cout << "Correct Usage: "
-	     << "propca \\\n"
-		 << "    -g <genotype file> \\\n"
-		 << "    -k <number of eigenvectors> \\\n"
-		 << "    -m <maximum number of iterations> \\\n"
-		 << "    -v (for debug mode) \\\n"
-		 << "    -a (for getting accuracy)\n"
-		 << endl;
+	std::cout << "Correct Usage: "
+			  << "propca \\\n"
+			  << "    -g <genotype file> \\\n"
+			  << "    -k <number of eigenvectors> \\\n"
+			  << "    -m <maximum number of iterations> \\\n"
+			  << "    -v (for debug mode) \\\n"
+			  << "    -a (for getting accuracy)\n"
+			  << std::endl;
 }
 
 void exitWithError(const std::string &error) {
@@ -221,7 +222,7 @@ void parse_args(int argc, char const *argv[]) {
 	command_line_opts.given_seed = false;
 
 	if (argc < 3) {
-		cout << "Correct Usage is " << argv[0] << " -p <parameter file>" << endl;
+		std::cout << "Correct Usage is " << argv[0] << " -p <parameter file>" << std::endl;
 		exit(-1);
 	}
 
@@ -235,8 +236,8 @@ void parse_args(int argc, char const *argv[]) {
 		command_line_opts.getaccuracy = cfg.getValueOfKey<bool>("accuracy", false);
 		command_line_opts.debugmode = cfg.getValueOfKey<bool>("debug", false);
 		command_line_opts.l = cfg.getValueOfKey<int>("l", command_line_opts.num_of_evec);
-		command_line_opts.OUTPUT_PATH = cfg.getValueOfKey<string>("output_path", string("fastppca_"));
-		command_line_opts.GENOTYPE_FILE_PATH = cfg.getValueOfKey<string>("genotype", string(""));
+		command_line_opts.OUTPUT_PATH = cfg.getValueOfKey<std::string>("output_path", std::string("fastppca_"));
+		command_line_opts.GENOTYPE_FILE_PATH = cfg.getValueOfKey<std::string>("genotype", std::string(""));
 		command_line_opts.convergence_limit = cfg.getValueOfKey<double>("convergence_limit", -1.0);
 		command_line_opts.var_normalize = cfg.getValueOfKey<bool>("var_normalize", false);
 		command_line_opts.accelerated_em = cfg.getValueOfKey<int>("accelerated_em", 0);
@@ -253,11 +254,11 @@ void parse_args(int argc, char const *argv[]) {
 		for (int i = 1; i < argc; i++) {
 			if (i + 1 != argc) {
 				if (strcmp(argv[i], "-g") == 0) {
-					command_line_opts.GENOTYPE_FILE_PATH = string(argv[i+1]);
+					command_line_opts.GENOTYPE_FILE_PATH = std::string(argv[i+1]);
 					got_genotype_file = true;
 					i++;
 				} else if (strcmp(argv[i], "-o") == 0) {
-					command_line_opts.OUTPUT_PATH = string(argv[i+1]);
+					command_line_opts.OUTPUT_PATH = std::string(argv[i+1]);
 					i++;
 				} else if (strcmp(argv[i], "-k") == 0) {
 					command_line_opts.num_of_evec = atoi(argv[i+1]);
@@ -297,7 +298,7 @@ void parse_args(int argc, char const *argv[]) {
 				} else if (strcmp(argv[i], "-txt") == 0) {
 					command_line_opts.text_version = true;
 				} else {
-					cout << "Not Enough or Invalid arguments" << endl;
+					std::cout << "Not Enough or Invalid arguments" << std::endl;
 					printCorrectUsage();
 					exit(-1);
 				}
@@ -322,7 +323,7 @@ void parse_args(int argc, char const *argv[]) {
 	}
 
 	if (got_genotype_file == false) {
-		cout << "Genotype file missing" << endl;
+		std::cout << "Genotype file missing" << std::endl;
 		printCorrectUsage();
 		exit(-1);
 	}
