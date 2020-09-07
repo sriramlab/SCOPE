@@ -95,7 +95,9 @@ void genotype::read_txt_naive(std::string filename, bool allow_missing) {
 	std::string line;
 	std::getline(ifs, line);
 	std::istringstream iss(line);
-	if (!(iss >> Nsnp >> Nindv)) {
+
+	iss >> Nsnp >> Nindv;
+	if ((Nsnp < 3) || (Nindv < 3)) {
 		std::cout << "ERROR: Header with number of SNPs and individuals not present" << std::endl;
 		exit(-1);
 	}
@@ -113,8 +115,10 @@ void genotype::read_txt_naive(std::string filename, bool allow_missing) {
 		float p_j = get_observed_pj(line);
 
 		int sum = 0;
-		for(int j = 0; j < line.size(); j++) {
-			int val = static_cast<int>(line[j] - '0');
+		for(int j = 0; j < Nindv; j++) {
+			// Assumes characters 0, 1, 2, or 9 separted by a single character
+			// e.g. one space or one tab
+			int val = static_cast<int>(line[j*2] - '0');
 			if (val == 9 && !allow_missing) {
 				val = simulate_geno_from_random(p_j);
 			}
@@ -158,7 +162,9 @@ void genotype::read_txt_mailman(std::string filename, bool allow_missing) {
 	std::string line;
 	std::getline(ifs, line);
     std::istringstream iss(line);
-    if (!(iss >> Nsnp >> Nindv)) {
+
+	iss >> Nsnp >> Nindv;
+	if ((Nsnp < 3) || (Nindv < 3)) {
 		std::cout << "ERROR: Header with number of SNPs and individuals not present" << std::endl;
 		exit(-1);
 	}
@@ -179,8 +185,10 @@ void genotype::read_txt_mailman(std::string filename, bool allow_missing) {
 
 		int horiz_seg_no = i / segment_size_hori;
 		int sum = 0;
-		for (int j = 0; j < line.size(); j++) {
-			int val = static_cast<int>(line[j] - '0');
+		for (int j = 0; j < Nindv; j++) {
+			// Assumes characters 0, 1, 2, or 9 separted by a single character
+			// e.g. one space or one tab
+			int val = static_cast<int>(line[j*2] - '0');
 
 			if (val == 9) {
 				if (allow_missing) {
