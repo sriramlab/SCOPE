@@ -29,11 +29,8 @@
 	#define fastmultiply_pre fastmultiply_pre_normal
 #endif
 
-using namespace Eigen;
-using namespace std;
-
 // Storing in RowMajor Form
-typedef Matrix<double, Dynamic, Dynamic, RowMajor> MatrixXdr;
+typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
 
 //Intermediate Variables
 //
@@ -350,8 +347,8 @@ void multiply_y_pre(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_me
 	}
 }
 
-pair<double, double> get_error_norm(MatrixXdr &c) {
-	HouseholderQR<MatrixXdr> qr(c);
+std::pair<double, double> get_error_norm(MatrixXdr &c) {
+	Eigen::HouseholderQR<MatrixXdr> qr(c);
 	MatrixXdr Q;
 	Q = qr.householderQ() * MatrixXdr::Identity(p, k);
 	MatrixXdr q_t(k, p);
@@ -376,7 +373,7 @@ pair<double, double> get_error_norm(MatrixXdr &c) {
 		multiply_y_post(q_t, k, b, true);
 	}
 
-	JacobiSVD<MatrixXdr> b_svd(b, ComputeThinU | ComputeThinV);
+	Eigen::JacobiSVD<MatrixXdr> b_svd(b, Eigen::ComputeThinU | Eigen::ComputeThinV);
 	MatrixXdr u_l, d_l, v_l;
 	if (fast_mode) {
         u_l = b_svd.matrixU();
@@ -407,7 +404,7 @@ pair<double, double> get_error_norm(MatrixXdr &c) {
         double b_lnorm = b_l.norm();
         double norm_k = (b_knorm * b_knorm) - (2 * temp_k);
         double norm_l = (b_lnorm * b_lnorm) - (2 * temp_l);
-        return make_pair(norm_k, norm_l);
+        return std::make_pair(norm_k, norm_l);
     } else {
         MatrixXdr e_l(p, n);
         MatrixXdr e_k(p, n);
@@ -420,7 +417,7 @@ pair<double, double> get_error_norm(MatrixXdr &c) {
 
         double ek_norm = e_k.norm();
         double el_norm = e_l.norm();
-        return make_pair(ek_norm, el_norm);
+        return std::make_pair(ek_norm, el_norm);
     }
 }
 
@@ -519,8 +516,8 @@ MatrixXdr run_EM_missing(MatrixXdr &c_orig) {
 
 	#if DEBUG == 1
 		if (debug) {
-			ofstream x_file;
-			x_file.open((string(command_line_opts.OUTPUT_PATH) + string("x_in_fn_vals.txt")).c_str());
+			std::ofstream x_file;
+			x_file.open((std::string(command_line_opts.OUTPUT_PATH) + string("x_in_fn_vals.txt")).c_str());
 			x_file << std::setprecision(15) << mu << std::endl;
 			x_file.close();
 		}
@@ -576,7 +573,7 @@ MatrixXdr run_EM(MatrixXdr &c_orig) {
 }
 
 void print_vals() {
-	HouseholderQR<MatrixXdr> qr(c);
+	Eigen::HouseholderQR<MatrixXdr> qr(c);
 	MatrixXdr Q;
 	Q = qr.householderQ() * MatrixXdr::Identity(p, k);
 	MatrixXdr q_t(k, p);
@@ -602,35 +599,35 @@ void print_vals() {
 		multiply_y_post(q_t, k, b, true);
 	}
 
-	JacobiSVD<MatrixXdr> b_svd(b, ComputeThinU | ComputeThinV);
+	Eigen::JacobiSVD<MatrixXdr> b_svd(b, Eigen::ComputeThinU | Eigen::ComputeThinV);
 	MatrixXdr u_l, v_l, u_k, v_k, d_k;
 	u_l = b_svd.matrixU();
 	v_l = b_svd.matrixV();
 	u_k = u_l.leftCols(k_orig);
 	v_k = v_l.leftCols(k_orig);
 
-	ofstream evec_file;
-	evec_file.open((string(command_line_opts.OUTPUT_PATH) + string("evecs.txt")).c_str());
+	std::ofstream evec_file;
+	evec_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("evecs.txt")).c_str());
 	evec_file << std::setprecision(15) << Q*u_k << std::endl;
 	evec_file.close();
-	ofstream eval_file;
-	eval_file.open((string(command_line_opts.OUTPUT_PATH) + string("evals.txt")).c_str());
+	std::ofstream eval_file;
+	eval_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("evals.txt")).c_str());
 	for(int kk = 0; kk < k_orig; kk++)
 		eval_file << std::setprecision(15) << (b_svd.singularValues())(kk)*(b_svd.singularValues())(kk) / g.Nsnp << std::endl;
 	eval_file.close();
 
-	ofstream proj_file;
-	proj_file.open((string(command_line_opts.OUTPUT_PATH) + string("projections.txt")).c_str());
+	std::ofstream proj_file;
+	proj_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("projections.txt")).c_str());
 	proj_file << std::setprecision(15) << v_k << std::endl;
 	proj_file.close();
 	if (debug) {
-		ofstream c_file;
-		c_file.open((string(command_line_opts.OUTPUT_PATH) + string("cvals.txt")).c_str());
+		std::ofstream c_file;
+		c_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("cvals.txt")).c_str());
 		c_file << std::setprecision(15) << c << std::endl;
 		c_file.close();
 
 		std::ofstream means_file;
-		means_file.open((string(command_line_opts.OUTPUT_PATH) + string("means.txt")).c_str());
+		means_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("means.txt")).c_str());
 		means_file << std::setprecision(15) << means << std::endl;
 		means_file.close();
 
@@ -639,8 +636,8 @@ void print_vals() {
 			d_k(kk, kk)  = (b_svd.singularValues())(kk);
 		MatrixXdr x_k;
 		x_k = d_k * (v_k.transpose());
-		ofstream x_file;
-		x_file.open((string(command_line_opts.OUTPUT_PATH) + string("xvals.txt")).c_str());
+		std::ofstream x_file;
+		x_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("xvals.txt")).c_str());
 		x_file << std::setprecision(15) << x_k.transpose() << std::endl;
 		x_file.close();
 	}
@@ -653,7 +650,7 @@ int main(int argc, char const *argv[]) {
 	clock_t io_begin = clock();
     clock_gettime(CLOCK_REALTIME, &t0);
 
-	pair<double, double> prev_error = make_pair(0.0, 0.0);
+	std::pair<double, double> prev_error = std::make_pair(0.0, 0.0);
 	double prevnll = 0.0;
 
 	parse_args(argc, argv);
@@ -785,7 +782,7 @@ int main(int argc, char const *argv[]) {
 
 	std::ofstream c_file;
 	if (debug) {
-		c_file.open((string(command_line_opts.OUTPUT_PATH) + std::string("cvals_orig.txt")).c_str());
+		c_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("cvals_orig.txt")).c_str());
 		c_file << std::setprecision(15) << c << std::endl;
 		c_file.close();
 		std::cout << "Read Matrix" << std::endl;
@@ -853,7 +850,7 @@ int main(int argc, char const *argv[]) {
 		}
 
 		if (accelerated_em == 1 || check_accuracy || toStop) {
-			pair<double, double> e = get_error_norm(c);
+			std::pair<double, double> e = get_error_norm(c);
 			prevnll = e.second;
 			if (check_accuracy) {
 				std::cout << "Iteration " << i + 1 << "  " << std::setprecision(15) << e.first << "  " << e.second << std::endl;
