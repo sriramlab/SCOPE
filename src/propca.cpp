@@ -3,6 +3,11 @@
  (Indian Institute of Technology, Delhi)
 */
 
+#include "propca.h"
+
+#include <iostream>
+#include <fstream>
+#include <iomanip>
 
 #include <chrono>
 #include "time.h"
@@ -15,74 +20,15 @@
 #include <Eigen/QR>
 
 #include "arguments.h"
-#include "genotype.h"
 #include "mailman.h"
 #include "helper.h"
 #include "storage.h"
 
-#if SSE_SUPPORT == 1
-	#define fastmultiply fastmultiply_sse
-	#define fastmultiply_pre fastmultiply_pre_sse
-#else
-	#define fastmultiply fastmultiply_normal
-	#define fastmultiply_pre fastmultiply_pre_normal
-#endif
-
-// Storing in RowMajor Form
-typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixXdr;
-
-//Intermediate Variables
-//
-// How to batch columns:
-int blocksize;
-double **partialsums;
-double *sum_op;
-
-// Intermediate computations in E-step.
-// Size = 3^(log_3(n)) * k
-double **yint_e;
-//  n X k
-double ***y_e;
-
-// Intermediate computations in M-step.
-// Size = nthreads X 3^(log_3(n)) * k
-double **yint_m;
-//  nthreads X log_3(n) X k
-double ***y_m;
-
 
 struct timespec t0;
 
-clock_t total_begin = clock();
 
-genotype g;
-MatrixXdr geno_matrix; //(p,n)
-
-int MAX_ITER;
-int k, p, n;
-int k_orig;
-
-MatrixXdr c; //(p,k)
-MatrixXdr x; //(k,n)
-MatrixXdr v; //(p,k)
-MatrixXdr means; //(p,1)
-MatrixXdr stds; //(p,1)
-
-options command_line_opts;
-
-bool debug = false;
-bool check_accuracy = false;
-bool var_normalize = false;
-int accelerated_em = 0;
-double convergence_limit;
-bool memory_efficient = false;
-bool missing = false;
-bool fast_mode = true;
-bool text_version = false;
-int nthreads = 1;
-
-
-void multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_m, double **y_m, double *partialsums, MatrixXdr &res) {
+void ProPCA::multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_m, double **y_m, double *partialsums, MatrixXdr &res) {
 	for (int seg_iter = begin; seg_iter < end; seg_iter++) {
 		mailman::fastmultiply(g.segment_size_hori, g.Nindv, Ncol_op, g.p[seg_iter], op, yint_m, partialsums, y_m);
 		int p_base = seg_iter * g.segment_size_hori;
@@ -94,7 +40,7 @@ void multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, 
 	}
 }
 
-void multiply_y_post_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_e, double **y_e, double *partialsums) {
+void ProPCA::multiply_y_post_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_e, double **y_e, double *partialsums) {
 	for (int i = 0; i < g.Nindv; i++) {
 		memset (y_e[i], 0, blocksize * sizeof(double));
 	}
@@ -105,18 +51,7 @@ void multiply_y_post_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op,
 }
 
 
-/*
- * M-step: Compute C = Y E 
- * Y : p X n genotype matrix
- * E : n K k matrix: X^{T} (XX^{T})^{-1}
- * C = p X k matrix
- *
- * op : E
- * Ncol_op : k
- * res : C
- * subtract_means :
- */
-void multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_means) {
+void ProPCA::multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_means) {
 	for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
 		sum_op[k_iter] = op.col(k_iter).sum();
 	}
@@ -142,10 +77,10 @@ void multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtra
 	int t = 0;
 	for (; t < nthreads - 1; t++) {
 	// std::cout << "Launching thread " << t << std::endl;
-		th[t] = std::thread(multiply_y_pre_fast_thread, t * perthread , (t+1)*perthread, std::ref(op), Ncol_op, yint_m[t], y_m[t], partialsums[t], std::ref(res));
+		th[t] = std::thread(&ProPCA::multiply_y_pre_fast_thread, this, t * perthread , (t+1)*perthread, std::ref(op), Ncol_op, yint_m[t], y_m[t], partialsums[t], std::ref(res));
 	}
 
-	th[t] = std::thread(multiply_y_pre_fast_thread, t * perthread , g.Nsegments_hori  - 1, std::ref(op), Ncol_op, yint_m[t], y_m[t], partialsums[t], std::ref(res));
+	th[t] = std::thread(&ProPCA::multiply_y_pre_fast_thread, this, t * perthread , g.Nsegments_hori  - 1, std::ref(op), Ncol_op, yint_m[t], y_m[t], partialsums[t], std::ref(res));
 
 	for (int t = 0; t < nthreads; t++) {
 		th[t].join();
@@ -190,18 +125,8 @@ void multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtra
 	}
 }
 
-/*
- * E-step: Compute X = D Y 
- * Y : p X n genotype matrix
- * D : k X p matrix: (C^T C)^{-1} C^{T}
- * X : k X n matrix
- *
- * op_orig : D
- * Nrows_op : k
- * res : X
- * subtract_means :
- */
-void multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &res, bool subtract_means) {
+
+void ProPCA::multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &res, bool subtract_means) {
 	MatrixXdr op;
 	op = op_orig.transpose();
 
@@ -230,10 +155,10 @@ void multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &res, bool
 	int t = 0;
 	for (; t < nthreads - 1; t++) {
 	// std::cout << "Launching " << t << std::endl;
-		th[t] = std::thread(multiply_y_post_fast_thread, t * perthread, (t+1) * perthread, std::ref(op), Ncol_op, yint_e[t], y_e[t], partialsums[t]);
+		th[t] = std::thread(&ProPCA::multiply_y_post_fast_thread, this, t * perthread, (t+1) * perthread, std::ref(op), Ncol_op, yint_e[t], y_e[t], partialsums[t]);
 	}
 	// std::cout << "Launching " << t << std::endl;
-	th[t] = std::thread(multiply_y_post_fast_thread, t * perthread, g.Nsegments_hori - 1, std::ref(op), Ncol_op, yint_e[t], y_e[t], partialsums[t]);
+	th[t] = std::thread(&ProPCA::multiply_y_post_fast_thread, this, t * perthread, g.Nsegments_hori - 1, std::ref(op), Ncol_op, yint_e[t], y_e[t], partialsums[t]);
 	for (int t = 0; t < nthreads; t++) {
 		th[t].join();
 	}
@@ -292,7 +217,7 @@ void multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &res, bool
 	}
 }
 
-void multiply_y_pre_naive_mem(MatrixXdr &op, int Ncol_op, MatrixXdr &res) {
+void ProPCA::multiply_y_pre_naive_mem(MatrixXdr &op, int Ncol_op, MatrixXdr &res) {
 	for (int p_iter = 0; p_iter < p; p_iter++) {
 		for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
 			double temp = 0;
@@ -304,7 +229,7 @@ void multiply_y_pre_naive_mem(MatrixXdr &op, int Ncol_op, MatrixXdr &res) {
 	}
 }
 
-void multiply_y_post_naive_mem(MatrixXdr &op, int Nrows_op, MatrixXdr &res) {
+void ProPCA::multiply_y_post_naive_mem(MatrixXdr &op, int Nrows_op, MatrixXdr &res) {
 	for (int n_iter = 0; n_iter < n; n_iter++) {
 		for (int k_iter = 0; k_iter < Nrows_op; k_iter++) {
 			double temp = 0;
@@ -315,15 +240,15 @@ void multiply_y_post_naive_mem(MatrixXdr &op, int Nrows_op, MatrixXdr &res) {
 	}
 }
 
-void multiply_y_pre_naive(MatrixXdr &op, int Ncol_op, MatrixXdr &res) {
+void ProPCA::multiply_y_pre_naive(MatrixXdr &op, int Ncol_op, MatrixXdr &res) {
 	res = geno_matrix * op;
 }
 
-void multiply_y_post_naive(MatrixXdr &op, int Nrows_op, MatrixXdr &res) {
+void ProPCA::multiply_y_post_naive(MatrixXdr &op, int Nrows_op, MatrixXdr &res) {
 	res = op * geno_matrix;
 }
 
-void multiply_y_post(MatrixXdr &op, int Nrows_op, MatrixXdr &res, bool subtract_means) {
+void ProPCA::multiply_y_post(MatrixXdr &op, int Nrows_op, MatrixXdr &res, bool subtract_means) {
     if (fast_mode) {
         multiply_y_post_fast(op, Nrows_op, res, subtract_means);
     } else {
@@ -334,7 +259,7 @@ void multiply_y_post(MatrixXdr &op, int Nrows_op, MatrixXdr &res, bool subtract_
 	}
 }
 
-void multiply_y_pre(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_means) {
+void ProPCA::multiply_y_pre(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_means) {
     if (fast_mode) {
         multiply_y_pre_fast(op, Ncol_op, res, subtract_means);
     } else {
@@ -346,7 +271,7 @@ void multiply_y_pre(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_me
 	}
 }
 
-std::pair<double, double> get_error_norm(MatrixXdr &c) {
+std::pair<double, double> ProPCA::get_error_norm(MatrixXdr &c) {
 	Eigen::HouseholderQR<MatrixXdr> qr(c);
 	MatrixXdr Q;
 	Q = qr.householderQ() * MatrixXdr::Identity(p, k);
@@ -425,7 +350,7 @@ std::pair<double, double> get_error_norm(MatrixXdr &c) {
  * c_orig : p X k matrix
  * Output: c_new : p X k matrix 
  */
-MatrixXdr run_EM_not_missing(MatrixXdr &c_orig) {
+MatrixXdr ProPCA::run_EM_not_missing(MatrixXdr &c_orig) {
 	#if DEBUG == 1
 		if (debug) {
 			print_time();
@@ -484,7 +409,7 @@ MatrixXdr run_EM_not_missing(MatrixXdr &c_orig) {
 }
 
 
-MatrixXdr run_EM_missing(MatrixXdr &c_orig) {
+MatrixXdr ProPCA::run_EM_missing(MatrixXdr &c_orig) {
 	MatrixXdr c_new(p, k);
 	MatrixXdr mu(k, n);
 
@@ -516,7 +441,7 @@ MatrixXdr run_EM_missing(MatrixXdr &c_orig) {
 	#if DEBUG == 1
 		if (debug) {
 			std::ofstream x_file;
-			x_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("x_in_fn_vals.txt")).c_str());
+			x_file.open((output_path + std::string("x_in_fn_vals.txt")).c_str());
 			x_file << std::setprecision(15) << mu << std::endl;
 			x_file.close();
 		}
@@ -563,7 +488,7 @@ MatrixXdr run_EM_missing(MatrixXdr &c_orig) {
 	return c_new;
 }
 
-MatrixXdr run_EM(MatrixXdr &c_orig) {
+MatrixXdr ProPCA::run_EM(MatrixXdr &c_orig) {
 	if (missing) {
 		return run_EM_missing(c_orig);
 	} else {
@@ -571,7 +496,7 @@ MatrixXdr run_EM(MatrixXdr &c_orig) {
 	}
 }
 
-void print_vals() {
+void ProPCA::print_vals() {
 	Eigen::HouseholderQR<MatrixXdr> qr(c);
 	MatrixXdr Q;
 	Q = qr.householderQ() * MatrixXdr::Identity(p, k);
@@ -606,27 +531,27 @@ void print_vals() {
 	v_k = v_l.leftCols(k_orig);
 
 	std::ofstream evec_file;
-	evec_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("evecs.txt")).c_str());
+	evec_file.open((output_path + std::string("evecs.txt")).c_str());
 	evec_file << std::setprecision(15) << Q*u_k << std::endl;
 	evec_file.close();
 	std::ofstream eval_file;
-	eval_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("evals.txt")).c_str());
+	eval_file.open((output_path + std::string("evals.txt")).c_str());
 	for(int kk = 0; kk < k_orig; kk++)
 		eval_file << std::setprecision(15) << (b_svd.singularValues())(kk)*(b_svd.singularValues())(kk) / g.Nsnp << std::endl;
 	eval_file.close();
 
 	std::ofstream proj_file;
-	proj_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("projections.txt")).c_str());
+	proj_file.open((output_path + std::string("projections.txt")).c_str());
 	proj_file << std::setprecision(15) << v_k << std::endl;
 	proj_file.close();
 	if (debug) {
 		std::ofstream c_file;
-		c_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("cvals.txt")).c_str());
+		c_file.open((output_path + std::string("cvals.txt")).c_str());
 		c_file << std::setprecision(15) << c << std::endl;
 		c_file.close();
 
 		std::ofstream means_file;
-		means_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("means.txt")).c_str());
+		means_file.open((output_path + std::string("means.txt")).c_str());
 		means_file << std::setprecision(15) << means << std::endl;
 		means_file.close();
 
@@ -636,23 +561,24 @@ void print_vals() {
 		MatrixXdr x_k;
 		x_k = d_k * (v_k.transpose());
 		std::ofstream x_file;
-		x_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("xvals.txt")).c_str());
+		x_file.open((output_path + std::string("xvals.txt")).c_str());
 		x_file << std::setprecision(15) << x_k.transpose() << std::endl;
 		x_file.close();
 	}
 }
 
 
-int main(int argc, char const *argv[]) {
+int ProPCA::run(int argc, char const *argv[]) {
+	options command_line_opts = parse_args(argc, argv);
+
 	auto start = std::chrono::system_clock::now();
 
 	clock_t io_begin = clock();
     clock_gettime(CLOCK_REALTIME, &t0);
+    //clock_gettime(CLOCK_REALTIME, &timespec);
 
 	std::pair<double, double> prev_error = std::make_pair(0.0, 0.0);
 	double prevnll = 0.0;
-
-	parse_args(argc, argv);
 
 	// TODO: Memory Effecient Version of Mailman
 
@@ -667,6 +593,7 @@ int main(int argc, char const *argv[]) {
 	var_normalize = command_line_opts.var_normalize;
 	accelerated_em = command_line_opts.accelerated_em;
 	nthreads = command_line_opts.nthreads;
+	output_path = std::string(command_line_opts.OUTPUT_PATH);
 
 	if (text_version) {
 		if (fast_mode) {
@@ -781,7 +708,7 @@ int main(int argc, char const *argv[]) {
 
 	std::ofstream c_file;
 	if (debug) {
-		c_file.open((std::string(command_line_opts.OUTPUT_PATH) + std::string("cvals_orig.txt")).c_str());
+		c_file.open((output_path + std::string("cvals_orig.txt")).c_str());
 		c_file << std::setprecision(15) << c << std::endl;
 		c_file.close();
 		std::cout << "Read Matrix" << std::endl;

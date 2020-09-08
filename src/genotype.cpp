@@ -6,7 +6,7 @@
 #include "storage.h"
 
 
-void genotype::init_means(bool is_missing) {
+void Genotype::init_means(bool is_missing) {
 	columnmeans.resize(Nsnp);
 	for(int i = 0; i < Nsnp; i++) {
 		double sum = columnsum[i];
@@ -19,7 +19,7 @@ void genotype::init_means(bool is_missing) {
 }
 
 
-float genotype::get_observed_pj(const std::string &line) {
+float Genotype::get_observed_pj(const std::string &line) {
 	int observed_sum = 0;
 	int observed_ct = 0;
 	for(int j = 0; j < line.size(); j++) {
@@ -35,7 +35,7 @@ float genotype::get_observed_pj(const std::string &line) {
 }
 
 
-float genotype::get_observed_pj(const unsigned char* line) {
+float Genotype::get_observed_pj(const unsigned char* line) {
 	int y[4];
 	int observed_sum = 0;
 	int observed_ct = 0;
@@ -89,7 +89,7 @@ int simulate_geno_from_random(float p_j) {
 
 // Genotype Data - Functions to read text files
 
-void genotype::read_txt_naive(std::string filename, bool allow_missing) {
+void Genotype::read_txt_naive(std::string filename, bool allow_missing) {
 	std::ifstream ifs(filename.c_str(), std::ios::in);
 
 	std::string line;
@@ -155,7 +155,7 @@ void genotype::read_txt_naive(std::string filename, bool allow_missing) {
 }
 
 
-void genotype::read_txt_mailman(std::string filename, bool allow_missing) {
+void Genotype::read_txt_mailman(std::string filename, bool allow_missing) {
 	std::ifstream ifs(filename.c_str(), std::ios::in);
 
 	// Calculating the sizes and other stuff for genotype matrix
@@ -240,7 +240,7 @@ inline void printvectornl(std::vector<T> &t, std::string delim = " ") {
 }
 
 
-int genotype::countlines(std::string filename) {
+int Genotype::countlines(std::string filename) {
 	std::ifstream inp(filename.c_str());
 	if (!inp.is_open()) {
 		std::cerr << "Error reading file " << filename << std::endl;
@@ -266,7 +266,7 @@ int genotype::countlines(std::string filename) {
 }
 
 
-void genotype::set_metadata() {
+void Genotype::set_metadata() {
 	wordsize = sizeof(char) * 8;
 	unitsize = 2;
 	unitsperword = wordsize/unitsize;
@@ -279,7 +279,7 @@ void genotype::set_metadata() {
 }
 
 
-void genotype::read_bed_mailman(std::string filename, bool allow_missing)  {
+void Genotype::read_bed_mailman(std::string filename, bool allow_missing)  {
 	std::ifstream ifs(filename.c_str(), std::ios::in | std::ios::binary);
 	char magic[3];
 	set_metadata();
@@ -360,7 +360,7 @@ void genotype::read_bed_mailman(std::string filename, bool allow_missing)  {
 }
 
 
-void genotype::read_bed_naive(std::string filename, bool allow_missing) {
+void Genotype::read_bed_naive(std::string filename, bool allow_missing) {
 	std::ifstream ifs(filename.c_str(), std::ios::in | std::ios::binary);
 	char magic[3];
 	set_metadata();
@@ -453,7 +453,7 @@ void genotype::read_bed_naive(std::string filename, bool allow_missing) {
 }
 
 
-void genotype::read_bed(std::string filename, bool allow_missing, bool mailman_mode) {
+void Genotype::read_bed(std::string filename, bool allow_missing, bool mailman_mode) {
 	if (mailman_mode) {
 		read_bed_mailman(filename, allow_missing);
 	} else {
@@ -462,7 +462,7 @@ void genotype::read_bed(std::string filename, bool allow_missing, bool mailman_m
 }
 
 
-void genotype::read_plink(std::string filenameprefix, bool allow_missing, bool mailman_mode) {
+void Genotype::read_plink(std::string filenameprefix, bool allow_missing, bool mailman_mode) {
 	std::stringstream f1;
 	f1 << filenameprefix << ".bim";
 	Nsnp = countlines(f1.str());
@@ -477,7 +477,7 @@ void genotype::read_plink(std::string filenameprefix, bool allow_missing, bool m
 
 // Geneotype Data -- Accessor Functions
 
-double genotype::get_geno(int snpindex, int indvindex, bool var_normalize = false) {
+double Genotype::get_geno(int snpindex, int indvindex, bool var_normalize = false) {
 	double m = msb[snpindex][indvindex];
 	double l = lsb[snpindex][indvindex];
 	double geno = (m * 2.0 + l) - get_col_mean(snpindex);
@@ -490,18 +490,18 @@ double genotype::get_geno(int snpindex, int indvindex, bool var_normalize = fals
 }
 
 
-double genotype::get_col_mean(int snpindex) {
+double Genotype::get_col_mean(int snpindex) {
 	double temp = columnmeans[snpindex];
 	return temp;
 }
 
-double genotype::get_col_sum(int snpindex) {
+double Genotype::get_col_sum(int snpindex) {
 	double temp = columnsum[snpindex];
 	return temp;
 }
 
 
-double genotype::get_col_std(int snpindex) {
+double Genotype::get_col_std(int snpindex) {
 	double p_i = get_col_mean(snpindex);
 
 	if (p_i == 0 || p_i == 2) {
@@ -513,8 +513,7 @@ double genotype::get_col_std(int snpindex) {
 }
 
 
-void genotype::generate_eigen_geno(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &geno_matrix,
-								   bool var_normalize) {
+void Genotype::generate_eigen_geno(MatrixXdr &geno_matrix, bool var_normalize) {
 	for (int i = 0; i < Nsnp; i++) {
 		for (int j = 0; j < Nindv; j++) {
 			double m = msb[i][j];
@@ -532,13 +531,13 @@ void genotype::generate_eigen_geno(Eigen::Matrix<double, Eigen::Dynamic, Eigen::
 
 // Genotype Data -- Modifier Functions
 
-void genotype::update_col_mean(int snpindex, double value) {
+void Genotype::update_col_mean(int snpindex, double value) {
 	columnmeans[snpindex] = value;
 }
 
 
 /* Redundant Function
-void genotype::read_genotype_eff (std::string filename,bool allow_missing){
+void Genotype::read_genotype_eff (std::string filename,bool allow_missing){
 	FILE* fp;
 	fp= fopen(filename.c_str(),"r");
 	int j=0;
@@ -612,8 +611,7 @@ void genotype::read_genotype_eff (std::string filename,bool allow_missing){
 }
 
 
-
-void genotype::read_bim (string filename){
+void Genotype::read_bim (string filename){
 	std::ifstream inp(filename.c_str());
 	if (!inp.is_open()){
 		std::cerr << "Error reading file "<< filename <<std::endl;
@@ -636,7 +634,8 @@ void genotype::read_bim (string filename){
 	inp.close();
 }
 
-void genotype::read_fam (string filename){
+
+void Genotype::read_fam (string filename){
 	std::ifstream inp(filename.c_str());
 	if (!inp.is_open()){
 		std::cerr << "Error reading file "<< filename <<std::endl;

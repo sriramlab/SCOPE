@@ -2,12 +2,14 @@
 #define PROPCA_ARGUMENTS_H_
 
 
+#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
 #include <string>
 #include <sstream>
+#include <typeinfo>
 #include <utility>
 
 
@@ -31,21 +33,6 @@ struct options {
 	bool given_seed;
 };
 
-/***
- * Replaced this with C++0x std::is_same fucntion
-template<typename T, typename U>
-struct is_same {
-	static const bool value = false; 
-};
-
-template<typename T>
-struct is_same<T,T> { 
-	static const bool value = true; 
-};
-**/
-
-extern options command_line_opts;
-
 
 void printCorrectUsage(void) {
 	std::cout << "Correct Usage: "
@@ -58,12 +45,14 @@ void printCorrectUsage(void) {
 			  << std::endl;
 }
 
+
 void exitWithError(const std::string &error) {
 	std::cout << error;
 	std::cin.ignore();
 	std::cin.get();
 	exit(EXIT_FAILURE);
 }
+
 
 class Convert {
  public:
@@ -201,7 +190,10 @@ class ConfigFile {
 	}
 };
 
-void parse_args(int argc, char const *argv[]) {
+
+options parse_args(int argc, char const *argv[]) {
+	options command_line_opts;
+
 	// Set default values
 	command_line_opts.num_of_evec = 5;
 	command_line_opts.max_iterations = command_line_opts.num_of_evec + 2;
@@ -327,6 +319,8 @@ void parse_args(int argc, char const *argv[]) {
 		printCorrectUsage();
 		exit(-1);
 	}
+
+	return command_line_opts;
 }
 
 #endif  // PROPCA_ARGUMENTS_H_

@@ -3,7 +3,7 @@ project(ProPCA)
 
 include_directories(include/)
 
-set(CMAKE_CXX_FLAGS "-std=c++0x -O3 -lrt")
+set(CMAKE_CXX_FLAGS "-std=c++0x -O3")
 
 IF (NOT DEFINED SSE_SUPPORT)
     SET(SSE_SUPPORT 0)
@@ -15,4 +15,4 @@ IF (NOT DEFINED DEBUG)
 ENDIF()
 ADD_DEFINITIONS(-DDEBUG=${DEBUG})
 
-add_executable(propca src/propca.cpp src/genotype.cpp src/storage.cpp)
+add_executable(run_propca src/run_propca.cpp src/propca.cpp src/genotype.cpp src/storage.cpp)
