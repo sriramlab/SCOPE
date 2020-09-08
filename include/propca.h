@@ -1,8 +1,8 @@
 #ifndef PROPCA_PROPCA_H_
 #define PROPCA_PROPCA_H_
 
-
 #include "genotype.h"
+#include "matmult.h"
 
 //struct timespec t0;
 
@@ -10,6 +10,7 @@ class ProPCA {
  public:
  	Genotype g;
 	MatrixXdr geno_matrix; //(p,n)
+	MatMult mm;
 
 	int MAX_ITER;
 	int k, p, n;
@@ -20,23 +21,6 @@ class ProPCA {
 	MatrixXdr v; //(p,k)
 	MatrixXdr means; //(p,1)
 	MatrixXdr stds; //(p,1)
-
-	// How to batch columns:
-	int blocksize;
-	double **partialsums;
-	double *sum_op;
-
-	// Intermediate computations in E-step.
-	// Size = 3^(log_3(n)) * k
-	double **yint_e;
-	//  n X k
-	double ***y_e;
-
-	// Intermediate computations in M-step.
-	// Size = nthreads X 3^(log_3(n)) * k
-	double **yint_m;
-	//  nthreads X log_3(n) X k
-	double ***y_m;
 
 	clock_t total_begin; //= clock();
 
@@ -54,46 +38,6 @@ class ProPCA {
 	std::string output_path;
 
 	ProPCA() {};
-
-	void multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_m, double **y_m, double *partialsums, MatrixXdr &res);
-	void multiply_y_post_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_e, double **y_e, double *partialsums);
-
-	/*
-	 * M-step: Compute C = Y E 
-	 * Y : p X n genotype matrix
-	 * E : n K k matrix: X^{T} (XX^{T})^{-1}
-	 * C = p X k matrix
-	 *
-	 * op : E
-	 * Ncol_op : k
-	 * res : C
-	 * subtract_means :
-	 */
-	void multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_means);
-
-	/*
-	 * E-step: Compute X = D Y 
-	 * Y : p X n genotype matrix
-	 * D : k X p matrix: (C^T C)^{-1} C^{T}
-	 * X : k X n matrix
-	 *
-	 * op_orig : D
-	 * Nrows_op : k
-	 * res : X
-	 * subtract_means :
-	 */
-	void multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &res, bool subtract_means);
-
-	void multiply_y_pre_naive_mem(MatrixXdr &op, int Ncol_op, MatrixXdr &res);
-	void multiply_y_post_naive_mem(MatrixXdr &op, int Nrows_op, MatrixXdr &res);
-
-	void multiply_y_pre_naive(MatrixXdr &op, int Ncol_op, MatrixXdr &res);
-
-	void multiply_y_post_naive(MatrixXdr &op, int Nrows_op, MatrixXdr &res);
-
-	void multiply_y_post(MatrixXdr &op, int Nrows_op, MatrixXdr &res, bool subtract_means);
-
-	void multiply_y_pre(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_means);
 
 	std::pair<double, double> get_error_norm(MatrixXdr &c);
 

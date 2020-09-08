@@ -6,12 +6,9 @@
 #include <emmintrin.h>
 #include <vector>
 
-#include <Eigen/Dense>
-#include <Eigen/Core>
-#include <Eigen/LU>
-#include <Eigen/SVD>
-
 #include "storage.h"
+#include "genotype.h"
+
 
 #if SSE_SUPPORT == 1
 	#define fastmultiply fastmultiply_sse
@@ -35,7 +32,7 @@ namespace mailman {
 	 * y : result
 	 */
 	void fastmultiply_normal(int m, int n , int k, std::vector<int> &p,
-							 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &x,
+							 MatrixXdr &x,
 							 double *yint, double *c, double **y) {
 		for (int i = 0; i < n; i++) {
 			int l = p[i];
@@ -84,7 +81,7 @@ namespace mailman {
 	 * y : result. also contains Y_0 that is updated.
 	 */
 	void fastmultiply_pre_normal(int m, int n, int k, int start, std::vector<int> &p,
-								 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &x,
+								 MatrixXdr &x,
 								 double *yint, double *c, double **y) {
 		int size1 = pow(3.0, m);
 		memset (yint, 0, size1* sizeof(double));
@@ -125,7 +122,7 @@ namespace mailman {
  	 */
 	#if SSE_SUPPORT == 1
 	void fastmultiply_sse(int m, int n, int k, std::vector<int> &p,
-						  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &x,
+						  MatrixXdr &x,
 						  double *yint, double *c, double **y) {
 		__m128d x0, x2, x4, x6, x8;
 		__m128d y0, y2, y4, y6, y8;
@@ -266,7 +263,7 @@ namespace mailman {
 
 
 	void fastmultiply_pre_sse(int m, int n, int k, int start, std::vector<int> &p,
-							  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &x,
+							  MatrixXdr &x,
 							  double *yint, double *c, double **y) {
 		int size1 = pow(3.0, m);
 		memset (yint, 0, size1* sizeof(double));
@@ -362,42 +359,6 @@ namespace mailman {
 
 	#endif
 
-	
-
-	/* Redundant Function 
-	void fastmultiply_memory_eff(int m, int n , int k, std::vector<unsigned> &p, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> &x, double *yint, double *c, double **y,int Nbits){
-		
-		for (int i = 0 ; i < n; i++)  {
-			int l = extract_from_arr(i,Nbits,p);
-			for (int j = 0 ; j < k ; j ++)
-				yint[l*k + j] += x(i,j);
-
-		}
-
-		int d = pow(3,m);
-		for (int j  = 0 ;  j < m ; j++)  {
-			d =d /3;
-			for (int l = 0; l < k ; l++)
-				c [l] = 0 ; 
-			for (int i = 0 ; i < d; i++) { 
-				for (int l = 0; l < k ; l++){
-					double z1 = yint[l + (i + d)*k];
-					double z2 = yint[l + (i +2*d)*k];
-					yint[l+(i+d)*k] = 0;
-					yint[l+(i+2*d)*k] = 0 ;
-					yint[l+i*k] = yint[l+i*k] + z1 + z2;
-					c[l] += (z1 + 2*z2);
-				}
-			}
-			for (int l = 0; l < k ; l++)
-				y[j][l] = c[l];
-		}
-		for (int l = 0; l < k ; l++)
-			yint[l] = 0;
-	}
-	*/
-
 }  // namespace mailman
-
 
 #endif  // PROPCA_MAILMAN_H_

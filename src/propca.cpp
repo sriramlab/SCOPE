@@ -11,7 +11,6 @@
 
 #include <chrono>
 #include "time.h"
-#include <thread>
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
@@ -20,256 +19,11 @@
 #include <Eigen/QR>
 
 #include "arguments.h"
-#include "mailman.h"
 #include "helper.h"
 #include "storage.h"
 
 
 struct timespec t0;
-
-
-void ProPCA::multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_m, double **y_m, double *partialsums, MatrixXdr &res) {
-	for (int seg_iter = begin; seg_iter < end; seg_iter++) {
-		mailman::fastmultiply(g.segment_size_hori, g.Nindv, Ncol_op, g.p[seg_iter], op, yint_m, partialsums, y_m);
-		int p_base = seg_iter * g.segment_size_hori;
-		for (int p_iter = p_base; (p_iter < p_base + g.segment_size_hori) && (p_iter < g.Nsnp); p_iter++) {
-			for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
-				res(p_iter, k_iter) = y_m[p_iter - p_base][k_iter];
-			}
-		}
-	}
-}
-
-void ProPCA::multiply_y_post_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_e, double **y_e, double *partialsums) {
-	for (int i = 0; i < g.Nindv; i++) {
-		memset (y_e[i], 0, blocksize * sizeof(double));
-	}
-
-	for (int seg_iter = begin; seg_iter < end; seg_iter++) {
-		mailman::fastmultiply_pre(g.segment_size_hori, g.Nindv, Ncol_op, seg_iter * g.segment_size_hori, g.p[seg_iter], op, yint_e, partialsums, y_e);
-	}
-}
-
-
-void ProPCA::multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_means) {
-	for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
-		sum_op[k_iter] = op.col(k_iter).sum();
-	}
-
-	#if DEBUG == 1
-		if (debug) {
-			print_time();
-			std::cout << "Starting mailman on premultiply" << std::endl;
-			std::cout << "Nops = " << Ncol_op << "\t" << g.Nsegments_hori << std::endl;
-			std::cout << "Segment size = " << g.segment_size_hori << std::endl;
-			std::cout << "Matrix size = " << g.segment_size_hori << "\t" << g.Nindv << std::endl;
-			std::cout << "op = " <<  op.rows() << "\t" << op.cols() << std::endl;
-		}
-	#endif
-
-	//TODO: Memory Effecient SSE FastMultipy
-
-	nthreads = (nthreads > g.Nsegments_hori) ? g.Nsegments_hori: nthreads;
-
-	std::thread th[nthreads];
-	int perthread = g.Nsegments_hori / nthreads;
-	// std::cout << g.Nsegments_hori << "\t" << nthreads << "\t" << perthread << std::endl;
-	int t = 0;
-	for (; t < nthreads - 1; t++) {
-	// std::cout << "Launching thread " << t << std::endl;
-		th[t] = std::thread(&ProPCA::multiply_y_pre_fast_thread, this, t * perthread , (t+1)*perthread, std::ref(op), Ncol_op, yint_m[t], y_m[t], partialsums[t], std::ref(res));
-	}
-
-	th[t] = std::thread(&ProPCA::multiply_y_pre_fast_thread, this, t * perthread , g.Nsegments_hori  - 1, std::ref(op), Ncol_op, yint_m[t], y_m[t], partialsums[t], std::ref(res));
-
-	for (int t = 0; t < nthreads; t++) {
-		th[t].join();
-	}
-
-	// for(int seg_iter = 0; seg_iter < g.Nsegments_hori - 1; seg_iter++){
-	//	mailman::fastmultiply ( g.segment_size_hori, g.Nindv, Ncol_op, g.p[seg_iter], op, yint_m, partialsums, y_m);
-	//	int p_base = seg_iter * g.segment_size_hori;
-	//	for(int p_iter=p_base; (p_iter < p_base + g.segment_size_hori) && (p_iter < g.Nsnp) ; p_iter++ ){
-	//		for(int k_iter = 0; k_iter < Ncol_op; k_iter++)
-	//			res(p_iter, k_iter) = y_m [p_iter - p_base][k_iter];
-	//	}
-	//}
-
-	int last_seg_size = (g.Nsnp % g.segment_size_hori != 0) ? g.Nsnp % g.segment_size_hori : g.segment_size_hori;
-	mailman::fastmultiply(last_seg_size, g.Nindv, Ncol_op, g.p[g.Nsegments_hori-1], op, yint_m[0], partialsums[0], y_m[0]);
-	int p_base = (g.Nsegments_hori - 1) * g.segment_size_hori;
-	for (int p_iter = p_base; (p_iter < p_base + g.segment_size_hori) && (p_iter < g.Nsnp); p_iter++) {
-		for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
-			res(p_iter, k_iter) = y_m[0][p_iter - p_base][k_iter];
-		}
-	}
-
-	#if DEBUG == 1
-		if (debug) {
-			print_time();
-			std::cout << "Ending mailman on premultiply" << std::endl;
-		}
-	#endif
-
-	if (!subtract_means) {
-		return;
-	}
-
-	for (int p_iter = 0; p_iter < p; p_iter++) {
-		for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
-			res(p_iter, k_iter) = res(p_iter, k_iter) - (g.get_col_mean(p_iter) * sum_op[k_iter]);
-			if (var_normalize) {
-				res(p_iter, k_iter) = res(p_iter, k_iter) / (g.get_col_std(p_iter));
-			}
-		}
-	}
-}
-
-
-void ProPCA::multiply_y_post_fast(MatrixXdr &op_orig, int Nrows_op, MatrixXdr &res, bool subtract_means) {
-	MatrixXdr op;
-	op = op_orig.transpose();
-
-	if (var_normalize && subtract_means) {
-		for (int p_iter = 0; p_iter < p ; p_iter++) {
-			for (int k_iter = 0; k_iter < Nrows_op; k_iter++) {
-				op(p_iter, k_iter) = op(p_iter, k_iter) / (g.get_col_std(p_iter));
-			}
-		}
-	}
-
-	#if DEBUG == 1
-		if (debug) {
-			print_time();
-			std::cout << "Starting mailman on postmultiply" << std::endl;
-		}
-	#endif
-
-	int Ncol_op = Nrows_op;
-
-	nthreads = (nthreads > g.Nsegments_hori) ? g.Nsegments_hori: nthreads;
-
-	std::thread th[nthreads];
-	int perthread = g.Nsegments_hori / nthreads;
-	// std::cout << "post: " << g.segment_size_hori << "\t" << g.Nsegments_hori << "\t" << nthreads << "\t" << perthread << std::endl;
-	int t = 0;
-	for (; t < nthreads - 1; t++) {
-	// std::cout << "Launching " << t << std::endl;
-		th[t] = std::thread(&ProPCA::multiply_y_post_fast_thread, this, t * perthread, (t+1) * perthread, std::ref(op), Ncol_op, yint_e[t], y_e[t], partialsums[t]);
-	}
-	// std::cout << "Launching " << t << std::endl;
-	th[t] = std::thread(&ProPCA::multiply_y_post_fast_thread, this, t * perthread, g.Nsegments_hori - 1, std::ref(op), Ncol_op, yint_e[t], y_e[t], partialsums[t]);
-	for (int t = 0; t < nthreads; t++) {
-		th[t].join();
-	}
-	// std::cout << "Joined "<< std::endl;
-
-	// int seg_iter;
-	// for(seg_iter = 0; seg_iter < g.Nsegments_hori-1; seg_iter++){
-	// 	mailman::fastmultiply_pre (g.segment_size_hori, g.Nindv, Ncol_op, seg_iter * g.segment_size_hori, g.p[seg_iter], op, yint_e, partialsums[0], y_e);
-	// }
-
-	for (int t = 1; t < nthreads; t++) {
-		for (int n_iter = 0; n_iter < n; n_iter++) {
-			for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
-				y_e[0][n_iter][k_iter] += y_e[t][n_iter][k_iter];
-			}
-		}
-	}
-
-	int last_seg_size = (g.Nsnp % g.segment_size_hori != 0) ? g.Nsnp % g.segment_size_hori : g.segment_size_hori;
-	mailman::fastmultiply_pre(last_seg_size, g.Nindv, Ncol_op, (g.Nsegments_hori-1) * g.segment_size_hori,
-							  g.p[g.Nsegments_hori-1], op, yint_e[0], partialsums[0], y_e[0]);
-
-	for (int n_iter = 0; n_iter < n; n_iter++)  {
-		for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
-			res(k_iter, n_iter) = y_e[0][n_iter][k_iter];
-			y_e[0][n_iter][k_iter] = 0;
-		}
-	}
-
-	#if DEBUG == 1
-		if (debug) {
-			print_time();
-			std::cout << "Ending mailman on postmultiply" << std::endl;
-		}
-	#endif
-
-
-	if (!subtract_means) {
-		return;
-	}
-
-	double *sums_elements = new double[Ncol_op];
-	memset (sums_elements, 0, Nrows_op * sizeof(int));
-
-	for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
-		double sum_to_calc = 0.0;
-		for (int p_iter = 0; p_iter < p; p_iter++) {
-			sum_to_calc += g.get_col_mean(p_iter) * op(p_iter, k_iter);
-		}
-		sums_elements[k_iter] = sum_to_calc;
-	}
-	for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
-		for (int n_iter = 0; n_iter < n; n_iter++) {
-			res(k_iter, n_iter) = res(k_iter, n_iter) - sums_elements[k_iter];
-		}
-	}
-}
-
-void ProPCA::multiply_y_pre_naive_mem(MatrixXdr &op, int Ncol_op, MatrixXdr &res) {
-	for (int p_iter = 0; p_iter < p; p_iter++) {
-		for (int k_iter = 0; k_iter < Ncol_op; k_iter++) {
-			double temp = 0;
-			for (int n_iter = 0; n_iter < n; n_iter++) {
-				temp+= g.get_geno(p_iter, n_iter, var_normalize) * op(n_iter, k_iter);
-			}
-			res(p_iter, k_iter) = temp;
-		}
-	}
-}
-
-void ProPCA::multiply_y_post_naive_mem(MatrixXdr &op, int Nrows_op, MatrixXdr &res) {
-	for (int n_iter = 0; n_iter < n; n_iter++) {
-		for (int k_iter = 0; k_iter < Nrows_op; k_iter++) {
-			double temp = 0;
-			for(int p_iter = 0; p_iter < p; p_iter++)
-				temp += op(k_iter, p_iter) * (g.get_geno(p_iter, n_iter, var_normalize));
-			res(k_iter, n_iter) = temp;
-		}
-	}
-}
-
-void ProPCA::multiply_y_pre_naive(MatrixXdr &op, int Ncol_op, MatrixXdr &res) {
-	res = geno_matrix * op;
-}
-
-void ProPCA::multiply_y_post_naive(MatrixXdr &op, int Nrows_op, MatrixXdr &res) {
-	res = op * geno_matrix;
-}
-
-void ProPCA::multiply_y_post(MatrixXdr &op, int Nrows_op, MatrixXdr &res, bool subtract_means) {
-    if (fast_mode) {
-        multiply_y_post_fast(op, Nrows_op, res, subtract_means);
-    } else {
-		if(memory_efficient)
-			multiply_y_post_naive_mem(op, Nrows_op, res);
-		else
-			multiply_y_post_naive(op, Nrows_op, res);
-	}
-}
-
-void ProPCA::multiply_y_pre(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_means) {
-    if (fast_mode) {
-        multiply_y_pre_fast(op, Ncol_op, res, subtract_means);
-    } else {
-		if (memory_efficient) {
-			multiply_y_pre_naive_mem(op, Ncol_op, res);
-		} else {
-			multiply_y_pre_naive(op, Ncol_op, res);
-		}
-	}
-}
 
 std::pair<double, double> ProPCA::get_error_norm(MatrixXdr &c) {
 	Eigen::HouseholderQR<MatrixXdr> qr(c);
@@ -280,7 +34,7 @@ std::pair<double, double> ProPCA::get_error_norm(MatrixXdr &c) {
 	MatrixXdr b(k, n);
 	// Need this for subtracting the correct mean in case of missing data
 	if (missing) {
-		multiply_y_post(q_t, k, b, false);
+		mm.multiply_y_post(q_t, k, b, false);
 		// Just calculating b from seen data
 		MatrixXdr M_temp(k, 1);
 		M_temp = q_t * means;
@@ -294,7 +48,7 @@ std::pair<double, double> ProPCA::get_error_norm(MatrixXdr &c) {
 			b.col(j) -= (M_temp - M_to_remove);
 		}
 	} else {
-		multiply_y_post(q_t, k, b, true);
+		mm.multiply_y_post(q_t, k, b, true);
 	}
 
 	Eigen::JacobiSVD<MatrixXdr> b_svd(b, Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -377,7 +131,7 @@ MatrixXdr ProPCA::run_EM_not_missing(MatrixXdr &c_orig) {
  	*  c_temp: D 
  	*/
 	MatrixXdr x_fn(k, n);
-	multiply_y_post(c_temp, k, x_fn, true);
+	mm.multiply_y_post(c_temp, k, x_fn, true);
 
 	#if DEBUG == 1
 		if (debug) {
@@ -396,7 +150,7 @@ MatrixXdr ProPCA::run_EM_not_missing(MatrixXdr &c_orig) {
 	 * c_new : C 
 	 * x_temp : E 
 	 */
-	multiply_y_pre(x_temp, k, c_new, true);
+	mm.multiply_y_pre(x_temp, k, c_new, true);
 
 	#if DEBUG == 1
 		if (debug) {
@@ -420,7 +174,7 @@ MatrixXdr ProPCA::run_EM_missing(MatrixXdr &c_orig) {
 	MatrixXdr T(k, n);
 	MatrixXdr c_fn;
 	c_fn = c_orig.transpose();
-	multiply_y_post(c_fn, k, T, false);
+	mm.multiply_y_post(c_fn, k, T, false);
 
 	MatrixXdr M_temp(k, 1);
 	M_temp = c_orig.transpose() * means;
@@ -455,7 +209,7 @@ MatrixXdr ProPCA::run_EM_missing(MatrixXdr &c_orig) {
 	MatrixXdr T1(p, k);
 	MatrixXdr mu_fn;
 	mu_fn = mu.transpose();
-	multiply_y_pre(mu_fn, k, T1, false);
+	mm.multiply_y_pre(mu_fn, k, T1, false);
 	MatrixXdr mu_sum(k, 1);
 	mu_sum = MatrixXdr::Zero(k, 1);
 	mu_sum = mu.rowwise().sum();
@@ -506,7 +260,7 @@ void ProPCA::print_vals() {
 
 	// Need this for subtracting the correct mean in case of missing data
 	if (missing) {
-		multiply_y_post(q_t, k, b, false);
+		mm.multiply_y_post(q_t, k, b, false);
 		// Just calculating b from seen data
 		MatrixXdr M_temp(k, 1);
 		M_temp = q_t * means;
@@ -520,7 +274,7 @@ void ProPCA::print_vals() {
 			b.col(j) -= (M_temp - M_to_remove);
 		}
 	} else {
-		multiply_y_post(q_t, k, b, true);
+		mm.multiply_y_post(q_t, k, b, true);
 	}
 
 	Eigen::JacobiSVD<MatrixXdr> b_svd(b, Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -659,47 +413,7 @@ int ProPCA::run(int argc, char const *argv[]) {
 	// TODO: Initialization of c with gaussian distribution
 	c = MatrixXdr::Random(p, k);
 
-	// Initial intermediate data structures
-	// Operate in blocks to improve caching
-	//
-	blocksize = k;
-	int hsegsize = g.segment_size_hori;  // = log_3(n)
-	int hsize = pow(3, hsegsize);
-	int vsegsize = g.segment_size_ver;  // = log_3(p)
-	int vsize = pow(3, vsegsize);
-
-	partialsums = new double*[nthreads];
-	yint_m = new double*[nthreads];
-	for (int t = 0; t < nthreads; t++) {
-		partialsums[t] = new double[blocksize];
-		yint_m[t] = new double[hsize*blocksize];
-		memset (yint_m[t], 0, hsize*blocksize * sizeof(double));
-	}
-
-	sum_op = new double[blocksize];
-
-	yint_e = new double* [nthreads];
-	for (int t = 0; t < nthreads; t++) {
-		yint_e[t] = new double[hsize*blocksize];
-		memset (yint_e[t], 0, hsize*blocksize * sizeof(double));
-	}
-
-	y_e  = new double**[nthreads];
-	for (int t = 0 ; t < nthreads ; t++) {
-		y_e[t]  = new double*[g.Nindv];
-		for (int i = 0 ; i < g.Nindv ; i++) {
-			y_e[t][i] = new double[blocksize];
-			memset (y_e[t][i], 0, blocksize * sizeof(double));
-		}
-	}
-
-	y_m = new double**[nthreads];
-	for (int t = 0; t < nthreads; t++) {
-		y_m[t] = new double*[hsegsize];
-		for (int i = 0; i < hsegsize; i++) {
-			y_m[t][i] = new double[blocksize];
-		}
-	}
+	mm = MatMult(g, k);
 
 	for (int i = 0; i < p; i++) {
 		means(i, 0) = g.get_col_mean(i);
@@ -797,6 +511,8 @@ int ProPCA::run(int argc, char const *argv[]) {
 
     print_vals();
 
+    mm.clean_up();
+
 	clock_t total_end = clock();
 	double io_time = static_cast<double>(io_end - io_begin) / CLOCKS_PER_SEC;
 	double avg_it_time = static_cast<double>(it_end - it_begin) / (MAX_ITER * 1.0 * CLOCKS_PER_SEC);
@@ -805,35 +521,6 @@ int ProPCA::run(int argc, char const *argv[]) {
 
 	std::chrono::duration<double> wctduration = std::chrono::system_clock::now() - start;
 	std::cout << "Wall clock time = " <<  wctduration.count() << std::endl;
-
-	delete[] sum_op;
-	for (int t = 0; t < nthreads; t++) {
-		delete[] yint_e[t];
-	}
-	delete[] yint_e;
-
-	for (int t = 0; t < nthreads; t++) {
-		delete[] yint_m[t];
-		delete[] partialsums[t];
-	}
-	delete[] yint_m;
-	delete[] partialsums;
-
-	for (int t = 0; t < nthreads; t++) {
-		for (int i  = 0; i < hsegsize; i++) {
-			delete[] y_m[t][i];
-		}
-		delete[] y_m[t];
-	}
-	delete[] y_m;
-
-	for (int t = 0; t < nthreads; t++) {
-		for (int i  = 0; i < g.Nindv; i++) {
-			delete[] y_e[t][i];
-		}
-		delete[] y_e[t];
-	}
-	delete[] y_e;
 
 	return 0;
 }

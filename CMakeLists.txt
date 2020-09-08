@@ -15,4 +15,4 @@ IF (NOT DEFINED DEBUG)
 ENDIF()
 ADD_DEFINITIONS(-DDEBUG=${DEBUG})
 
-add_executable(run_propca src/run_propca.cpp src/propca.cpp src/genotype.cpp src/storage.cpp)
+add_executable(run_propca src/run_propca.cpp src/propca.cpp src/matmult.cpp src/genotype.cpp src/storage.cpp)
