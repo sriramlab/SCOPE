@@ -50,16 +50,16 @@ class ProPCA {
 	clock_t total_begin; //= clock();
 
 	//options command_line_opts;
-	bool debug = false;
-	bool check_accuracy = false;
-	bool var_normalize = false;
-	int accelerated_em = 0;
+	bool debug; // = false;
+	bool check_accuracy; // = false;
+	bool var_normalize; // = false;
+	int accelerated_em; // = 0;
 	double convergence_limit;
-	bool memory_efficient = false;
-	bool missing = false;
-	bool fast_mode = true;
-	bool text_version = false;
-	int nthreads = 1;
+	bool memory_efficient; // = false;
+	bool missing; // = false;
+	bool fast_mode; // = true;
+	bool text_version; // = false;
+	int nthreads; // = 1;
 	std::string output_path;
 
 	ProPCA() {}

@@ -49,22 +49,22 @@ class ALStructure {
 	double rmse;
 	int MAX_ITER;
 	int k, p, n;
-	int niter;
+	long long int niter;
 	int seed;
 
-	std::ofstream fp;
+	//std::ofstream fp;
 
 	clock_t total_begin; //= clock();
 
-	bool debug = false;
+	bool debug; // = false;
 	double convergence_limit;
-	bool memory_efficient = false;
-	bool missing = false;
-	bool fast_mode = true;
-	bool text_version = false;
-	bool fhat_version = false;
-	bool fhattrunc_version = false;
-	int nthreads = 1;
+	bool memory_efficient; // = false;
+	bool missing; // = false;
+	bool fast_mode; // = true;
+	bool text_version; // = false;
+	bool fhat_version; // = false;
+	bool fhattrunc_version; // = false;
+	int nthreads; // = 1;
 	std::string output_path;
 
 	ALStructure() {}

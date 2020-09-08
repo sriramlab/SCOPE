@@ -1,3 +1,6 @@
+//#include <bits/stdc++.h>
+
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iomanip>
@@ -67,7 +70,7 @@ double truncate_with_epsilon(double x) {
 }
 
 
-double truncate(double x) {
+double truncate_xxx(double x) {
 	if (x < 0.0)
 		return 0.0;
 	if (x > 1.0)
@@ -81,9 +84,7 @@ void project_onto_simplex(std::vector<double> &data) {
 
 	std::iota(inds.begin(), inds.end(), 0);
 
-	std::stable_sort(inds.begin(),
-					 inds.end(),
-					 [&data](size_t i, size_t j) { return data[i] > data[j]; });
+	//std::stable_sort(inds.begin(), inds.end(), [&data](size_t i, size_t j) { return data[i] > data[j]; });
 
 	double tmpsum = 0;
 	double tmax;
@@ -280,6 +281,8 @@ void ALStructure::solve_for_Phat() {
 
 
 void ALStructure::initialize() {
+	std::ofstream fp;
+
 	if (command_line_opts.given_seed) {
 		srand(seed);
 	} else {
@@ -300,6 +303,8 @@ void ALStructure::initialize() {
 
 
 void ALStructure::truncated_alternating_least_squares() {
+	std::ofstream fp;
+
 	solve_for_Qhat();
 	if (debug) {
 		fp.open((command_line_opts.OUTPUT_PATH + "Qhat_0.txt").c_str());
@@ -371,6 +376,8 @@ void ALStructure::truncated_alternating_least_squares() {
 
 
 int ALStructure::run() {
+	std::ofstream fp;
+
 	memory_efficient = command_line_opts.memory_efficient;
 	text_version = command_line_opts.text_version;
 	fhat_version = command_line_opts.fhat_version;
@@ -459,7 +466,7 @@ int ALStructure::run() {
 
 		if (command_line_opts.fhattrunc_version) {
 			std::cout << " -- truncated";
-			Fhat = Fhat.unaryExpr(&truncate);
+			Fhat = Fhat.unaryExpr(&truncate_xxx);
 			if (debug) {
 				fp.open((command_line_opts.OUTPUT_PATH + "Fhat_truncated.txt").c_str());
 				fp << std::setprecision(15) << Fhat << std::endl;

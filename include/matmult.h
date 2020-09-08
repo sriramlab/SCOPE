@@ -10,12 +10,12 @@ class MatMult {
  	Genotype g;
 	MatrixXdr geno_matrix;  // (p,n)
 
-	bool debug = false;
-	bool var_normalize = false;
-	bool memory_efficient = false;
-	bool missing = false;
-	bool fast_mode = true;
-	int nthreads = 1;
+	bool debug; // = false;
+	bool var_normalize; // = false;
+	bool memory_efficient; // = false;
+	bool missing; // = false;
+	bool fast_mode; // = true;
+	int nthreads; // = 1;
 
 	// How to batch columns:
 	int blocksize;  // k
