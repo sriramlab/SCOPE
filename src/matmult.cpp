@@ -1,12 +1,14 @@
 #include "matmult.h"
 #include "mailman.h"
 
+#include <iostream>
 #include <thread>
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
 
-MatMult::MatMult(Genotype &xg, 
+MatMult::MatMult(Genotype &xg,
+			MatrixXdr &xgeno_matrix,
 			bool xdebug,
 			bool xvar_normalize,
 			bool xmemory_efficient,
@@ -15,6 +17,7 @@ MatMult::MatMult(Genotype &xg,
 			int xnthreads,
 			int xk) {
 	g = xg;
+	geno_matrix = xgeno_matrix;
 
 	debug = xdebug;
 	var_normalize = xvar_normalize;
@@ -277,10 +280,10 @@ void MatMult::multiply_y_post_naive_mem(MatrixXdr &op, int Nrows_op, MatrixXdr &
 }
 
 void MatMult::multiply_y_post(MatrixXdr &op, int Nrows_op, MatrixXdr &res, bool subtract_means) {
-    if (fast_mode) {
-        multiply_y_post_fast(op, Nrows_op, res, subtract_means);
-    } else {
-		if(memory_efficient)
+	if (fast_mode) {
+		multiply_y_post_fast(op, Nrows_op, res, subtract_means);
+	} else {
+		if (memory_efficient)
 			multiply_y_post_naive_mem(op, Nrows_op, res);
 		else
 			res = op * geno_matrix;
@@ -288,9 +291,9 @@ void MatMult::multiply_y_post(MatrixXdr &op, int Nrows_op, MatrixXdr &res, bool 
 }
 
 void MatMult::multiply_y_pre(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_means) {
-    if (fast_mode) {
-        multiply_y_pre_fast(op, Ncol_op, res, subtract_means);
-    } else {
+	if (fast_mode) {
+		multiply_y_pre_fast(op, Ncol_op, res, subtract_means);
+	} else {
 		if (memory_efficient) {
 			multiply_y_pre_naive_mem(op, Ncol_op, res);
 		} else {

@@ -2,6 +2,7 @@
 #define PROPCA_ALSTRUCTURE_H_
 
 #include <string>
+#include <fstream>
 
 #include "genotype.h"
 #include "matmult.h"
@@ -38,10 +39,6 @@ class ALStructure {
 	MatrixXdr geno_matrix; //(p,n)
 	MatMult mm;
 
-	int MAX_ITER;
-	int k, p, n;
-	int k_orig;
-
 	MatrixXdr V;         // (n,k) for truncated ALS
 	MatrixXdr Fhat;      // (p,n) for truncated ALS
 	MatrixXdr Phat;      // (p,k) for truncated ALS
@@ -49,12 +46,17 @@ class ALStructure {
 	MatrixXdr Qhat_old;  // (k,n) for truncated ALS
 	MatrixXdr diff;      // (k,n) for truncated ALS
 
+	double rmse;
+	int MAX_ITER;
+	int k, p, n;
+	int niter;
+	int seed;
+
+	std::ofstream fp;
+
 	clock_t total_begin; //= clock();
 
 	bool debug = false;
-	bool check_accuracy = false;
-	bool var_normalize = false;
-	int accelerated_em = 0;
 	double convergence_limit;
 	bool memory_efficient = false;
 	bool missing = false;
@@ -72,6 +74,9 @@ class ALStructure {
 
 	void solve_for_Qhat(void);
 	void solve_for_Phat(void);
+
+	void initialize(void);
+	void truncated_alternating_least_squares(void);
 
 	int run();
 };

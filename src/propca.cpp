@@ -553,7 +553,7 @@ int ProPCA::run() {
 	// TODO: Initialization of c with gaussian distribution
 	c = MatrixXdr::Random(p, k);
 
-	mm = MatMult(g, debug, var_normalize, memory_efficient,
+	mm = MatMult(g, geno_matrix, debug, var_normalize, memory_efficient,
 				 missing, fast_mode, nthreads, k);
 
 	for (int i = 0; i < p; i++) {

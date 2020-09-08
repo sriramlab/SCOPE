@@ -115,19 +115,22 @@ void project_onto_simplex(std::vector<double> &data) {
 ALStructure::ALStructure(int argc, char const *argv[]) {
 	// Set default values
 	command_line_opts.num_of_evec = 5;
-	command_line_opts.max_iterations = command_line_opts.num_of_evec + 2;
 	command_line_opts.debugmode = false;
 	command_line_opts.OUTPUT_PATH = "alstructure_";
 	bool got_genotype_file = false;
 	bool got_rowspace_file = false;
-	command_line_opts.convergence_limit = -1.0;
+	command_line_opts.convergence_limit = 0.00001;  // Used by R code
+	command_line_opts.max_iterations = 1000;        // Used by R code
 	command_line_opts.memory_efficient = false;
 	command_line_opts.fast_mode = true;
 	command_line_opts.missing = false;
 	command_line_opts.text_version = false;
+	command_line_opts.fhat_version = false;
+	command_line_opts.fhattrunc_version = false;
 	command_line_opts.nthreads = 1;
 	command_line_opts.seed = -1;
 	command_line_opts.given_seed = false;
+
 
 	if (argc < 3) {
 		std::cout << "Correct Usage is " << argv[0] << " -p <parameter file>" << std::endl;
@@ -223,8 +226,6 @@ ALStructure::ALStructure(int argc, char const *argv[]) {
 				command_line_opts.fhattrunc_version = true;
 			}
 		}
-		if (!got_max_iter)
-			command_line_opts.max_iterations = command_line_opts.num_of_evec + 2;
 	}
 
 	if (got_genotype_file == false) {
@@ -239,7 +240,7 @@ void ALStructure::printCorrectUsage(void) {
 	std::cout << "Correct Usage: "
 			  << "run_alstructure \\\n"
 			  << "    -g <genotype file> \\\n"
-			  << "    -k <number of eigenvectors> \\\n"
+			  << "    -r <rowspace file> \\\n"
 			  << "    -m <maximum number of iterations> \\\n"
 			  << "    -v (for debug mode) \\\n"
 			  << std::endl;
@@ -249,7 +250,6 @@ void ALStructure::printCorrectUsage(void) {
 void ALStructure::solve_for_Qhat() {
 	if (fhat_version || fhattrunc_version) {
 		Qhat = (((Phat.transpose() * Phat).inverse() * Phat.transpose()) * Fhat);
-		return;
 	}
 
 	MatrixXdr temp_kxp(k, p);
@@ -267,17 +267,106 @@ void ALStructure::solve_for_Qhat() {
 
 void ALStructure::solve_for_Phat() {
 	if (fhat_version || fhattrunc_version) {
-		Phat = (Fhat * (Qhat.transpose() * (Qhat * Qhat.transpose()).inverse() ));
-		return;
+		Phat = (Fhat * (Qhat.transpose() * (( Qhat * Qhat.transpose() ).inverse()) ));
 	}
 
 	MatrixXdr temp_nxk(n, k);
 	temp_nxk = V * (V.transpose() * ((Qhat.transpose() * (Qhat * Qhat.transpose()).inverse())));
 
-	// Phat = X * temp_nxk, where X is the p X n genotype matrix
-	MatrixXdr Phat_new(p, k);
 	mm.multiply_y_pre(temp_nxk, k, Phat, false);
+
 	Phat = Phat.unaryExpr(&divide_by_two);
+}
+
+
+void ALStructure::initialize() {
+	if (command_line_opts.given_seed) {
+		srand(seed);
+	} else {
+		seed = (unsigned int) time(0);
+		srand(seed);
+	}
+
+	std::cout << "Initializing Phat using seed " << seed << std::endl;
+
+	Phat = MatrixXdr::Random(p, k);
+	Phat = Phat.unaryExpr(&fix_interval);
+	if (debug) {
+		fp.open((command_line_opts.OUTPUT_PATH + "Phat_0.txt").c_str());
+		fp << std::setprecision(15) << Phat << std::endl;
+		fp.close();
+	}
+}
+
+
+void ALStructure::truncated_alternating_least_squares() {
+	solve_for_Qhat();
+	if (debug) {
+		fp.open((command_line_opts.OUTPUT_PATH + "Qhat_0.txt").c_str());
+		fp << std::setprecision(15) << Qhat << std::endl;
+		fp.close();
+	}
+
+	solve_for_Phat();
+	if (debug) {
+		fp.open((command_line_opts.OUTPUT_PATH + "Phat_1.txt").c_str());
+		fp << std::setprecision(15) << Phat << std::endl;
+		fp.close();
+	}
+
+	for (niter = 1; niter < MAX_ITER; niter++) {
+		Qhat_old = Qhat;
+
+		solve_for_Qhat();
+		if (debug) {
+			fp.open((command_line_opts.OUTPUT_PATH + "Qhat_" + std::to_string(niter) + ".txt").c_str());
+			fp << std::setprecision(15) << Qhat << std::endl;
+			fp.close();
+		}
+
+		std::vector<double> col;
+		col.resize(k);
+		for (int c_iter = 0; c_iter < n; c_iter++) {
+ 			//VectorXd::Map(&col[0], d) = Qhat.col(c_iter);
+			for (int r_iter = 0; r_iter < k; r_iter++) {
+				col[r_iter] = Qhat(r_iter, c_iter);
+			}
+
+			project_onto_simplex(col);
+
+			for (int r_iter = 0; r_iter < k; r_iter++) {
+				Qhat(r_iter, c_iter) = col[r_iter];
+			}
+		}
+
+		if (debug) {
+			fp.open((command_line_opts.OUTPUT_PATH + "Qhat_" + std::to_string(niter) + "_w_constraints.txt").c_str());
+			fp << std::setprecision(15) << Qhat << std::endl;
+			fp.close();
+		}
+
+		solve_for_Phat();
+		if (debug) {
+			fp.open((command_line_opts.OUTPUT_PATH + "Phat_" + std::to_string(niter+1) + ".txt").c_str());
+			fp << std::setprecision(15) << Phat << std::endl;
+			fp.close();
+		}
+
+		Phat = Phat.unaryExpr(&truncate_with_epsilon);
+		if (debug) {
+			fp.open((command_line_opts.OUTPUT_PATH + "Phat_" + std::to_string(niter+1) + "_w_constraints.txt").c_str());
+			fp << std::setprecision(15) << Phat << std::endl;
+			fp.close();
+		}
+
+		diff = Qhat - Qhat_old;
+ 		rmse = diff.norm() / sqrt(n * k);
+		std::cout << "Iteration " << niter+1 << "  -- RMSE " << std::setprecision(15) << rmse << std::endl;
+		if ((rmse <= convergence_limit) || std::isnan(rmse)) {
+			std::cout << "Breaking after " << niter+1 << " iterations" << std::endl;
+			break;
+		}
+	}
 }
 
 
@@ -289,12 +378,11 @@ int ALStructure::run() {
 	fast_mode = command_line_opts.fast_mode;
 	missing = command_line_opts.missing;
 	MAX_ITER =  command_line_opts.max_iterations;
+	convergence_limit = command_line_opts.convergence_limit;
 	debug = command_line_opts.debugmode;
 	nthreads = command_line_opts.nthreads;
 	output_path = std::string(command_line_opts.OUTPUT_PATH);
-
-	std::ofstream fp;
-	char file_suffix[100];
+	seed = command_line_opts.seed;
 
 	auto start = std::chrono::system_clock::now();
 
@@ -336,8 +424,7 @@ int ALStructure::run() {
 		}
 	}
 
-	// Alec this is where I read in the file... 
-	// Read first d eigenvectors of the n x n matrix: G = (1/m) * (X^T X - D)
+	// Read eigenvectors of the n x n matrix: G = (1/m) * (X^T X - D)
 	V = load_tsv<MatrixXdr>(command_line_opts.ROWSPACE_FILE_PATH);
 	k = V.cols();
 
@@ -348,23 +435,14 @@ int ALStructure::run() {
 
 	clock_t io_end = clock();
 
-	mm = MatMult(g, debug, false, memory_efficient,
-				 missing, fast_mode, nthreads, k);
-
-	double rmse;
-	bool toStop = false;
-	convergence_limit = command_line_opts.convergence_limit;
-	if(convergence_limit != -1) {
-		toStop = true;
-	}
+	mm = MatMult(g, geno_matrix, debug, false, memory_efficient, missing, fast_mode, nthreads, k);
 
 	// Compute Fhat = (1/2) * (X V V^T)
 	if (fhat_version || fhattrunc_version) {
-		Fhat.resize(p, n);
-
 		std::cout << "Explicitly computing Fhat";
 		MatrixXdr temp_pxk(p, k);
 		mm.multiply_y_pre(V, k, temp_pxk, false);
+
 		if (debug) {
 			fp.open((command_line_opts.OUTPUT_PATH + "XV.txt").c_str());
 			fp << std::setprecision(15) << temp_pxk << std::endl;
@@ -391,40 +469,6 @@ int ALStructure::run() {
 		std::cout << std::endl;
 	}
 
-	// Initialize P_hat and Q_hat
-	if (command_line_opts.given_seed) {
-		srand(command_line_opts.seed);
-	} else {
-		srand((unsigned int) time(0));
-	}
-
-	if (std::string(command_line_opts.INITIAL_FILE_PATH) == "") {
-		Phat = MatrixXdr::Random(p, k);
-		Phat = Phat.unaryExpr(&fix_interval);
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "Phat_0.txt").c_str());
-			fp << std::setprecision(15) << Phat << std::endl;
-			fp.close();
-		}
-	} else {
-		std::cout << "Using initial Phat provided" << std::endl;
-		Phat = load_tsv<MatrixXdr>(command_line_opts.INITIAL_FILE_PATH);
-	}
-
-	solve_for_Qhat();
-	if (debug) {
-		fp.open((command_line_opts.OUTPUT_PATH + "Qhat_0.txt").c_str());
-		fp << std::setprecision(15) << Qhat << std::endl;
-		fp.close();
-	}
-
-	solve_for_Phat();
-	if (debug) {
-		fp.open((command_line_opts.OUTPUT_PATH + "Phat_1.txt").c_str());
-		fp << std::setprecision(15) << Phat << std::endl;
-		fp.close();
-	}
-
 	std::cout << "Running on Dataset of " << p << " SNPs and " << n << " Individuals" << std::endl;
 
 	#if SSE_SUPPORT == 1
@@ -433,74 +477,34 @@ int ALStructure::run() {
 	#endif
 
 	clock_t it_begin = clock();
-	for (int i = 0; i < MAX_ITER; i++) {
-		Qhat_old = Qhat;
 
-		solve_for_Qhat();
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "Qhat_" + std::to_string(i) + ".txt").c_str());
-			fp << std::setprecision(15) << Qhat << std::endl;
-			fp.close();
-		}
+	if (std::string(command_line_opts.INITIAL_FILE_PATH) != "") {
+		std::cout << "Using initial Phat provided" << std::endl; 
+		Phat = load_tsv<MatrixXdr>(command_line_opts.INITIAL_FILE_PATH);
+	} else {
+		initialize();
+	}
 
-		std::vector<double> col;
-		col.resize(k);
-		for (int c_iter = 0; c_iter < n; c_iter++) {
- 			//VectorXd::Map(&col[0], d) = Qhat.col(c_iter);
-			for (int r_iter = 0; r_iter < k; r_iter++) {
-				col[r_iter] = Qhat(r_iter, c_iter);
-			}
+	truncated_alternating_least_squares();
 
-			project_onto_simplex(col);
-
-			for (int r_iter = 0; r_iter < k; r_iter++) {
-				Qhat(r_iter, c_iter) = col[r_iter];
-			}
-		}
-
-
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "Qhat_" + std::to_string(i) + "_w_constraints.txt").c_str());
-			fp << std::setprecision(15) << Qhat << std::endl;
-			fp.close();
-		}
-
-		solve_for_Phat();
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "Phat_" + std::to_string(i+1) + ".txt").c_str());
-			fp << std::setprecision(15) << Phat << std::endl;
-			fp.close();
-		}
-
-		Phat = Phat.unaryExpr(&truncate_with_epsilon);
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "Phat_" + std::to_string(i+1) + "_w_constraints.txt").c_str());
-			fp << std::setprecision(15) << Phat << std::endl;
-			fp.close();
-		}
-
-		if (toStop) {
-			diff = Qhat - Qhat_old;
- 			rmse = diff.norm() / sqrt(n * k);
-			std::cout << "Iteration " << i+1 << "  -- RMSE " << std::setprecision(15) << rmse << std::endl;
-			if ((rmse <= convergence_limit) || std::isnan(rmse)) {
-				std::cout << "Breaking after " << i+1 << " iterations" << std::endl;
-				break;
-			}
+	// Restart!
+	if ((niter < 10) && (std::isnan(rmse))) {
+		if (std::string(command_line_opts.INITIAL_FILE_PATH) == "") {
+			command_line_opts.given_seed = false;
+			initialize();
+			truncated_alternating_least_squares();
 		}
 	}
 
 	clock_t it_end = clock();
 
-	std::ofstream phat_file;
-	phat_file.open((command_line_opts.OUTPUT_PATH + "Phat.txt").c_str());
-	phat_file << std::setprecision(15) << Phat << std::endl;
-	phat_file.close();
+	fp.open((command_line_opts.OUTPUT_PATH + "Phat.txt").c_str());
+	fp << std::setprecision(15) << Phat << std::endl;
+	fp.close();
 
-	std::ofstream qhat_file;
-	qhat_file.open((command_line_opts.OUTPUT_PATH + "Qhat.txt").c_str());
-	qhat_file << std::setprecision(15) << Qhat << std::endl;
-	qhat_file.close();
+	fp.open((command_line_opts.OUTPUT_PATH + "Qhat.txt").c_str());
+	fp << std::setprecision(15) << Qhat << std::endl;
+	fp.close();
 
 	mm.clean_up();
 

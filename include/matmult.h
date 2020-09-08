@@ -38,6 +38,7 @@ class MatMult {
 	MatMult() {}
 
 	MatMult(Genotype &xg,
+			MatrixXdr &xgeno_matrix,
 			bool xdebug,
 			bool xvar_normalize,
 			bool xmemory_efficient,
