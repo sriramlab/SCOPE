@@ -67,40 +67,6 @@ MatMult::MatMult(Genotype &xg,
 	}
 }
 
-
-MatMult::~MatMult() {
-	delete[] sum_op;
-
-        for (int t = 0; t < nthreads; t++) {
-                delete[] yint_e[t];
-        }
-        delete[] yint_e;
-
-        for (int t = 0; t < nthreads; t++) {
-                delete[] yint_m[t];
-                delete[] partialsums[t];
-        }
-        delete[] yint_m;
-        delete[] partialsums;
-
-        for (int t = 0; t < nthreads; t++) {
-                for (int i  = 0; i < hsegsize; i++) {
-                        delete[] y_m[t][i];
-                }
-                delete[] y_m[t];
-        }
-        delete[] y_m;
-
-        for (int t = 0; t < nthreads; t++) {
-                for (int i  = 0; i < g.Nindv; i++) {
-                        delete[] y_e[t][i];
-                }
-                delete[] y_e[t];
-        }
-        delete[] y_e;
-}
-
-
 void MatMult::multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_m, double **y_m, double *partialsums, MatrixXdr &res) {
 	for (int seg_iter = begin; seg_iter < end; seg_iter++) {
 		mailman::fastmultiply(g.segment_size_hori, g.Nindv, Ncol_op, g.p[seg_iter], op, yint_m, partialsums, y_m);
@@ -336,3 +302,34 @@ void MatMult::multiply_y_pre(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool su
 	}
 }
 
+void MatMult::clean_up() {
+	delete[] sum_op;
+
+	for (int t = 0; t < nthreads; t++) {
+		delete[] yint_e[t];
+	}
+	delete[] yint_e;
+
+	for (int t = 0; t < nthreads; t++) {
+		delete[] yint_m[t];
+		delete[] partialsums[t];
+	}
+	delete[] yint_m;
+	delete[] partialsums;
+
+	for (int t = 0; t < nthreads; t++) {
+		for (int i  = 0; i < hsegsize; i++) {
+			delete[] y_m[t][i];
+		}
+		delete[] y_m[t];
+	}
+	delete[] y_m;
+
+	for (int t = 0; t < nthreads; t++) {
+		for (int i  = 0; i < g.Nindv; i++) {
+			delete[] y_e[t][i];
+		}
+		delete[] y_e[t];
+	}
+	delete[] y_e;
+}

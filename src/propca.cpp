@@ -652,6 +652,8 @@ int ProPCA::run() {
 
     print_vals();
 
+    mm.clean_up();
+
 	clock_t total_end = clock();
 	double io_time = static_cast<double>(io_end - io_begin) / CLOCKS_PER_SEC;
 	double avg_it_time = static_cast<double>(it_end - it_begin) / (MAX_ITER * 1.0 * CLOCKS_PER_SEC);
