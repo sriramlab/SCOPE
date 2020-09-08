@@ -32,7 +32,7 @@ ProPCA::ProPCA(int argc, char const *argv[]) {
 	command_line_opts.max_iterations = command_line_opts.num_of_evec + 2;
 	command_line_opts.getaccuracy = false;
 	command_line_opts.debugmode = false;
-	command_line_opts.OUTPUT_PATH = "fastppca_";
+	command_line_opts.OUTPUT_PATH = "propca_";
 	bool got_genotype_file = false;
 	command_line_opts.var_normalize = false;
 	command_line_opts.l = command_line_opts.num_of_evec;
