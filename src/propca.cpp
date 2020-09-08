@@ -18,12 +18,154 @@
 #include <Eigen/SVD>
 #include <Eigen/QR>
 
-#include "arguments.h"
+#include "config.h"
 #include "helper.h"
 #include "storage.h"
 
 
 struct timespec t0;
+
+
+ProPCA::ProPCA(int argc, char const *argv[]) {
+	// Set default values
+	command_line_opts.num_of_evec = 5;
+	command_line_opts.max_iterations = command_line_opts.num_of_evec + 2;
+	command_line_opts.getaccuracy = false;
+	command_line_opts.debugmode = false;
+	command_line_opts.OUTPUT_PATH = "fastppca_";
+	bool got_genotype_file = false;
+	command_line_opts.var_normalize = false;
+	command_line_opts.l = command_line_opts.num_of_evec;
+	command_line_opts.accelerated_em = 0;
+	command_line_opts.convergence_limit = -1.0;
+	command_line_opts.memory_efficient = false;
+	command_line_opts.fast_mode = true;
+	command_line_opts.missing = false;
+	command_line_opts.text_version = false;
+	command_line_opts.nthreads = 1;
+	command_line_opts.seed = -1;
+	command_line_opts.given_seed = false;
+
+	if (argc < 3) {
+		std::cout << "Correct Usage is " << argv[0] << " -p <parameter file>" << std::endl;
+		exit(-1);
+	}
+
+	if (strcmp(argv[1], "-p") == 0) {
+		// Read arguments from configuration file
+		std::string cfg_filename = std::string(argv[2]);
+		ConfigFile cfg(cfg_filename);
+		got_genotype_file = cfg.keyExists("genotype");
+		command_line_opts.num_of_evec = cfg.getValueOfKey<int>("num_evec", 5);
+		command_line_opts.max_iterations = cfg.getValueOfKey<int>("max_iterations", command_line_opts.num_of_evec + 2);
+		command_line_opts.getaccuracy = cfg.getValueOfKey<bool>("accuracy", false);
+		command_line_opts.debugmode = cfg.getValueOfKey<bool>("debug", false);
+		command_line_opts.l = cfg.getValueOfKey<int>("l", command_line_opts.num_of_evec);
+		command_line_opts.OUTPUT_PATH = cfg.getValueOfKey<std::string>("output_path", std::string("fastppca_"));
+		command_line_opts.GENOTYPE_FILE_PATH = cfg.getValueOfKey<std::string>("genotype", std::string(""));
+		command_line_opts.convergence_limit = cfg.getValueOfKey<double>("convergence_limit", -1.0);
+		command_line_opts.var_normalize = cfg.getValueOfKey<bool>("var_normalize", false);
+		command_line_opts.accelerated_em = cfg.getValueOfKey<int>("accelerated_em", 0);
+		command_line_opts.memory_efficient = cfg.getValueOfKey<bool>("memory_efficient", false);
+		command_line_opts.fast_mode = cfg.getValueOfKey<bool>("fast_mode", true);
+		command_line_opts.missing = cfg.getValueOfKey<bool>("missing", false);
+		command_line_opts.text_version = cfg.getValueOfKey<bool>("text_version", false);
+		command_line_opts.nthreads = cfg.getValueOfKey<int>("nthreads", 1);
+		command_line_opts.seed = cfg.getValueOfKey<int>("seed", -1);
+		command_line_opts.given_seed = command_line_opts.seed >= 0 ? true: false;
+	} else {
+		// Read arguments from standard input
+		bool got_max_iter = false;
+		for (int i = 1; i < argc; i++) {
+			if (i + 1 != argc) {
+				if (strcmp(argv[i], "-g") == 0) {
+					command_line_opts.GENOTYPE_FILE_PATH = std::string(argv[i+1]);
+					got_genotype_file = true;
+					i++;
+				} else if (strcmp(argv[i], "-o") == 0) {
+					command_line_opts.OUTPUT_PATH = std::string(argv[i+1]);
+					i++;
+				} else if (strcmp(argv[i], "-k") == 0) {
+					command_line_opts.num_of_evec = atoi(argv[i+1]);
+					i++;
+				} else if (strcmp(argv[i], "-m") == 0) {
+					command_line_opts.max_iterations = atoi(argv[i+1]);
+					got_max_iter = true;
+					i++;
+				} else if (strcmp(argv[i], "-nt") == 0) {
+					command_line_opts.nthreads = atoi(argv[i+1]);
+					i++;
+				} else if (strcmp(argv[i], "-seed") == 0) {
+					command_line_opts.seed = atoi(argv[i+1]);
+					command_line_opts.given_seed = command_line_opts.seed >= 0 ? true: false;
+					i++;
+				} else if (strcmp(argv[i], "-l") == 0) {
+					command_line_opts.l = atoi(argv[i+1]);
+					i++;
+				} else if (strcmp(argv[i], "-cl") == 0) {
+					command_line_opts.convergence_limit = atof(argv[i+1]);
+					i++;
+				} else if (strcmp(argv[i], "-aem") == 0) {
+					command_line_opts.accelerated_em = atof(argv[i+1]);
+					i++;
+				} else if (strcmp(argv[i], "-v") == 0) {
+					command_line_opts.debugmode = true;
+				} else if (strcmp(argv[i], "-vn") == 0) {
+					command_line_opts.var_normalize = true;
+				} else if (strcmp(argv[i], "-a") == 0) {
+					command_line_opts.getaccuracy = true;
+				} else if (strcmp(argv[i], "-mem") == 0) {
+					command_line_opts.memory_efficient = true;
+				} else if (strcmp(argv[i], "-miss") == 0) {
+					command_line_opts.missing = true;
+				} else if (strcmp(argv[i], "-nfm") == 0) {
+					command_line_opts.fast_mode = false;
+				} else if (strcmp(argv[i], "-txt") == 0) {
+					command_line_opts.text_version = true;
+				} else {
+					std::cout << "Not Enough or Invalid arguments" << std::endl;
+					printCorrectUsage();
+					exit(-1);
+				}
+			} else if (strcmp(argv[i], "-v") == 0) {
+				command_line_opts.debugmode = true;
+			} else if (strcmp(argv[i], "-a") == 0) {
+				command_line_opts.getaccuracy = true;
+			} else if (strcmp(argv[i], "-vn") == 0) {
+				command_line_opts.var_normalize = true;
+			} else if (strcmp(argv[i], "-mem") == 0) {
+				command_line_opts.memory_efficient = true;
+			} else if (strcmp(argv[i], "-nfm") == 0) {
+				command_line_opts.fast_mode = false;
+			} else if (strcmp(argv[i], "-miss") == 0) {
+				command_line_opts.missing = true;
+			} else if (strcmp(argv[i], "-txt") == 0) {
+				command_line_opts.text_version = true;
+			}
+		}
+		if (!got_max_iter)
+			command_line_opts.max_iterations = command_line_opts.num_of_evec + 2;
+	}
+
+	if (got_genotype_file == false) {
+		std::cout << "Genotype file missing" << std::endl;
+		printCorrectUsage();
+		exit(-1);
+	}
+}
+
+
+void ProPCA::printCorrectUsage(void) {
+	std::cout << "Correct Usage: "
+			  << "propca \\\n"
+			  << "    -g <genotype file> \\\n"
+			  << "    -k <number of eigenvectors> \\\n"
+			  << "    -m <maximum number of iterations> \\\n"
+			  << "    -v (for debug mode) \\\n"
+			  << "    -a (for getting accuracy)\n"
+			  << std::endl;
+}
+
 
 std::pair<double, double> ProPCA::get_error_norm(MatrixXdr &c) {
 	Eigen::HouseholderQR<MatrixXdr> qr(c);
@@ -322,9 +464,7 @@ void ProPCA::print_vals() {
 }
 
 
-int ProPCA::run(int argc, char const *argv[]) {
-	options command_line_opts = parse_args(argc, argv);
-
+int ProPCA::run() {
 	auto start = std::chrono::system_clock::now();
 
 	clock_t io_begin = clock();
