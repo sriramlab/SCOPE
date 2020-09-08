@@ -651,7 +651,7 @@ int ProPCA::run(int argc, char const *argv[]) {
 
 	if (!fast_mode && !memory_efficient) {
 		geno_matrix.resize(p, n);
-		g.generate_eigen_geno(geno_matrix, var_normalize);
+		g.generate_eigen_geno(geno_matrix, true, var_normalize);
 	}
 
 	clock_t io_end = clock();

@@ -513,18 +513,16 @@ double Genotype::get_col_std(int snpindex) {
 }
 
 
-void Genotype::generate_eigen_geno(MatrixXdr &geno_matrix, bool var_normalize) {
+void Genotype::generate_eigen_geno(MatrixXdr &geno_matrix, bool subtract_means, bool var_normalize) {
 	for (int i = 0; i < Nsnp; i++) {
 		for (int j = 0; j < Nindv; j++) {
-			double m = msb[i][j];
-			double l = lsb[i][j];
-			double geno = (m * 2.0 + l) - get_col_mean(i);
+			geno_matrix(i, j) = msb[i][j] * 2.0 + lsb[i][j];
 
-			if(var_normalize) {
-				geno_matrix(i, j) = geno / get_col_std(i);
-			} else {
-				geno_matrix(i, j) = geno;
-			}
+			if (subtract_means)
+				geno_matrix(i, j) -= get_col_mean(i);
+
+			if (var_normalize)
+				geno_matrix(i, j) /= get_col_std(i);
 		}
 	}
 }

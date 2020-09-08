@@ -66,7 +66,7 @@ class Genotype {
 	double get_col_std(int snpindex);
 	void update_col_mean(int snpindex, double value);
 
-	void generate_eigen_geno(MatrixXdr &geno_matrix, bool var_normalize);
+	void generate_eigen_geno(MatrixXdr &geno_matrix, bool subtract_means, bool var_normalize);
 };
 
 #endif  // PROPCA_GENOTYPE_H_
