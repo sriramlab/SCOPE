@@ -79,6 +79,8 @@ class ALStructure {
 	void truncated_alternating_least_squares(void);
 
 	int run();
+
+	void write_matrix(MatrixXdr &mat, const std::string file_name);
 };
 
 #endif  // PROPCA_ALSTRUCTURE_H_

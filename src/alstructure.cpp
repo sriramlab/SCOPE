@@ -281,8 +281,6 @@ void ALStructure::solve_for_Phat() {
 
 
 void ALStructure::initialize() {
-	std::ofstream fp;
-
 	if (command_line_opts.given_seed) {
 		srand(seed);
 	} else {
@@ -294,40 +292,22 @@ void ALStructure::initialize() {
 
 	Phat = MatrixXdr::Random(p, k);
 	Phat = Phat.unaryExpr(&fix_interval);
-	if (debug) {
-		fp.open((command_line_opts.OUTPUT_PATH + "Phat_0.txt").c_str());
-		fp << std::setprecision(15) << Phat << std::endl;
-		fp.close();
-	}
+	if (debug) write_matrix(Phat, std::string("Phat_0.txt"));
 }
 
 
 void ALStructure::truncated_alternating_least_squares() {
-	std::ofstream fp;
-
 	solve_for_Qhat();
-	if (debug) {
-		fp.open((command_line_opts.OUTPUT_PATH + "Qhat_0.txt").c_str());
-		fp << std::setprecision(15) << Qhat << std::endl;
-		fp.close();
-	}
+	write_matrix(Qhat, std::string("Qhat_0.txt"));
 
 	solve_for_Phat();
-	if (debug) {
-		fp.open((command_line_opts.OUTPUT_PATH + "Phat_1.txt").c_str());
-		fp << std::setprecision(15) << Phat << std::endl;
-		fp.close();
-	}
+	write_matrix(Phat, std::string("Phat_1.txt"));
 
 	for (niter = 1; niter < MAX_ITER; niter++) {
 		Qhat_old = Qhat;
 
 		solve_for_Qhat();
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "Qhat_" + std::to_string(niter) + ".txt").c_str());
-			fp << std::setprecision(15) << Qhat << std::endl;
-			fp.close();
-		}
+		if (debug) write_matrix(Qhat, std::string("Qhat_" + std::to_string(niter) + ".txt"));
 
 		std::vector<double> col;
 		col.resize(k);
@@ -343,26 +323,13 @@ void ALStructure::truncated_alternating_least_squares() {
 				Qhat(r_iter, c_iter) = col[r_iter];
 			}
 		}
-
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "Qhat_" + std::to_string(niter) + "_w_constraints.txt").c_str());
-			fp << std::setprecision(15) << Qhat << std::endl;
-			fp.close();
-		}
+		if (debug) write_matrix(Qhat, std::string("Qhat_" + std::to_string(niter) + "_w_constraints.txt"));
 
 		solve_for_Phat();
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "Phat_" + std::to_string(niter+1) + ".txt").c_str());
-			fp << std::setprecision(15) << Phat << std::endl;
-			fp.close();
-		}
+		if (debug) write_matrix(Phat, std::string("Phat_" + std::to_string(niter+1) + ".txt"));
 
 		Phat = Phat.unaryExpr(&truncate_with_epsilon);
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "Phat_" + std::to_string(niter+1) + "_w_constraints.txt").c_str());
-			fp << std::setprecision(15) << Phat << std::endl;
-			fp.close();
-		}
+		if (debug) write_matrix(Phat, std::string("Phat_" + std::to_string(niter+1) + "_w_constraints.txt"));
 
 		diff = Qhat - Qhat_old;
  		rmse = diff.norm() / sqrt(n * k);
@@ -375,9 +342,14 @@ void ALStructure::truncated_alternating_least_squares() {
 }
 
 
-int ALStructure::run() {
+void ALStructure::write_matrix(MatrixXdr &mat, const std::string file_name) {
 	std::ofstream fp;
+	fp.open((command_line_opts.OUTPUT_PATH + file_name).c_str());
+	fp << std::setprecision(15) << mat << std::endl;
+	fp.close();
+}
 
+int ALStructure::run() {
 	memory_efficient = command_line_opts.memory_efficient;
 	text_version = command_line_opts.text_version;
 	fhat_version = command_line_opts.fhat_version;
@@ -424,11 +396,7 @@ int ALStructure::run() {
 	if (!fast_mode && !memory_efficient) {
 		geno_matrix.resize(p, n);
 		g.generate_eigen_geno(geno_matrix, false, false);
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "X.txt").c_str());
-			fp << std::setprecision(15) << geno_matrix << std::endl;
-			fp.close();
-		}
+		if (debug) write_matrix(geno_matrix, "X.txt");
 	}
 
 	// Read eigenvectors of the n x n matrix: G = (1/m) * (X^T X - D)
@@ -450,28 +418,16 @@ int ALStructure::run() {
 		MatrixXdr temp_pxk(p, k);
 		mm.multiply_y_pre(V, k, temp_pxk, false);
 
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "XV.txt").c_str());
-			fp << std::setprecision(15) << temp_pxk << std::endl;
-			fp.close();
-		}
+		// if (debug) write_matrix(temp_pxk, "XV.txt");
 
 		Fhat = temp_pxk * V.transpose();
 		Fhat = Fhat.unaryExpr(&divide_by_two);
-		if (debug) {
-			fp.open((command_line_opts.OUTPUT_PATH + "Fhat.txt").c_str());
-			fp << std::setprecision(15) << Fhat << std::endl;
-			fp.close();
-		}
+		if (debug) write_matrix(Fhat, "Fhat.txt");
 
 		if (command_line_opts.fhattrunc_version) {
 			std::cout << " -- truncated";
 			Fhat = Fhat.unaryExpr(&truncate_xxx);
-			if (debug) {
-				fp.open((command_line_opts.OUTPUT_PATH + "Fhat_truncated.txt").c_str());
-				fp << std::setprecision(15) << Fhat << std::endl;
-				fp.close();
-			}
+			if (debug) write_matrix(Fhat, "Fhat_truncated.txt");
 		}
 		std::cout << std::endl;
 	}
@@ -508,13 +464,8 @@ int ALStructure::run() {
 
 	clock_t it_end = clock();
 
-	fp.open((command_line_opts.OUTPUT_PATH + "Phat.txt").c_str());
-	fp << std::setprecision(15) << Phat << std::endl;
-	fp.close();
-
-	fp.open((command_line_opts.OUTPUT_PATH + "Qhat.txt").c_str());
-	fp << std::setprecision(15) << Qhat << std::endl;
-	fp.close();
+	write_matrix(Phat, "Phat.txt");
+	write_matrix(Qhat, "Qhat.txt");
 
 	mm.clean_up();
 
