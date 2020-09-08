@@ -157,7 +157,7 @@ ProPCA::ProPCA(int argc, char const *argv[]) {
 
 void ProPCA::printCorrectUsage(void) {
 	std::cout << "Correct Usage: "
-			  << "propca \\\n"
+			  << "run_propca \\\n"
 			  << "    -g <genotype file> \\\n"
 			  << "    -k <number of eigenvectors> \\\n"
 			  << "    -m <maximum number of iterations> \\\n"
