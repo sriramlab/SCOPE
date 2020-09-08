@@ -36,7 +36,6 @@ class MatMult {
 	double ***y_m;    // nthreads X log_3(n) X k
 
 	MatMult() {}
-
 	MatMult(Genotype &xg,
 			MatrixXdr &xgeno_matrix,
 			bool xdebug,
@@ -46,6 +45,7 @@ class MatMult {
 			bool xfast_mode,
 			int xnthreads,
 			int xk);
+	~MatMult();
 
 	void multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_m, double **y_m, double *partialsums, MatrixXdr &res);
 	void multiply_y_post_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_e, double **y_e, double *partialsums);
@@ -81,8 +81,6 @@ class MatMult {
 	void multiply_y_post(MatrixXdr &op, int Nrows_op, MatrixXdr &res, bool subtract_means);
 
 	void multiply_y_pre(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bool subtract_means);
-
-	void clean_up();
 };
 
 
