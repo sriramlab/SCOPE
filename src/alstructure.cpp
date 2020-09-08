@@ -495,11 +495,14 @@ int ALStructure::run() {
 	truncated_alternating_least_squares();
 
 	// Restart!
-	if ((niter < 10) && (std::isnan(rmse))) {
-		if (std::string(command_line_opts.INITIAL_FILE_PATH) == "") {
-			command_line_opts.given_seed = false;
+	if (std::isnan(rmse) && (std::string(command_line_opts.INITIAL_FILE_PATH) == "")) {
+		command_line_opts.given_seed = false;
+		for (int xx = 0; xx < 5; xx++) {
 			initialize();
 			truncated_alternating_least_squares();
+			if (!std::isnan(rmse)) {
+				break;
+			}
 		}
 	}
 
