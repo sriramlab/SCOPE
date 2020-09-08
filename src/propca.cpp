@@ -413,7 +413,8 @@ int ProPCA::run(int argc, char const *argv[]) {
 	// TODO: Initialization of c with gaussian distribution
 	c = MatrixXdr::Random(p, k);
 
-	mm = MatMult(g, k);
+	mm = MatMult(g, debug, var_normalize, memory_efficient,
+				 missing, fast_mode, nthreads, k);
 
 	for (int i = 0; i < p; i++) {
 		means(i, 0) = g.get_col_mean(i);

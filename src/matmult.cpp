@@ -6,10 +6,24 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 
-MatMult::MatMult(Genotype &gg, int k) {
-	g = gg;
+MatMult::MatMult(Genotype &xg, 
+			bool xdebug,
+			bool xvar_normalize,
+			bool xmemory_efficient,
+			bool xmissing,
+			bool xfast_mode,
+			int xnthreads,
+			int xk) {
+	g = xg;
 
-	blocksize = k;
+	debug = xdebug;
+	var_normalize = xvar_normalize;
+	memory_efficient = xmemory_efficient;
+	missing = xmissing;
+	fast_mode = xfast_mode;
+	nthreads = xnthreads;
+
+	blocksize = xk;
 
 	hsegsize = g.segment_size_hori;  // = log_3(n)
 	hsize = pow(3, hsegsize);
@@ -89,7 +103,7 @@ void MatMult::multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bo
 		}
 	#endif
 
-	//TODO: Memory Effecient SSE FastMultipy
+	// TODO: Memory Effecient SSE FastMultipy
 
 	nthreads = (nthreads > g.Nsegments_hori) ? g.Nsegments_hori: nthreads;
 
@@ -109,13 +123,13 @@ void MatMult::multiply_y_pre_fast(MatrixXdr &op, int Ncol_op, MatrixXdr &res, bo
 	}
 
 	// for(int seg_iter = 0; seg_iter < g.Nsegments_hori - 1; seg_iter++){
-	//	mailman::fastmultiply ( g.segment_size_hori, g.Nindv, Ncol_op, g.p[seg_iter], op, yint_m, partialsums, y_m);
-	//	int p_base = seg_iter * g.segment_size_hori;
-	//	for(int p_iter=p_base; (p_iter < p_base + g.segment_size_hori) && (p_iter < g.Nsnp) ; p_iter++ ){
-	//		for(int k_iter = 0; k_iter < Ncol_op; k_iter++)
-	//			res(p_iter, k_iter) = y_m [p_iter - p_base][k_iter];
-	//	}
-	//}
+	// mailman::fastmultiply ( g.segment_size_hori, g.Nindv, Ncol_op, g.p[seg_iter], op, yint_m, partialsums, y_m);
+	// int p_base = seg_iter * g.segment_size_hori;
+	// for(int p_iter=p_base; (p_iter < p_base + g.segment_size_hori) && (p_iter < g.Nsnp) ; p_iter++ ){
+	//   for(int k_iter = 0; k_iter < Ncol_op; k_iter++)
+	//     res(p_iter, k_iter) = y_m [p_iter - p_base][k_iter];
+	//   }
+	// }
 
 	int last_seg_size = (g.Nsnp % g.segment_size_hori != 0) ? g.Nsnp % g.segment_size_hori : g.segment_size_hori;
 	mailman::fastmultiply(last_seg_size, g.Nindv, Ncol_op, g.p[g.Nsegments_hori-1], op, yint_m[0], partialsums[0], y_m[0]);
@@ -314,5 +328,5 @@ void MatMult::clean_up() {
 		}
 		delete[] y_e[t];
 	}
-	delete[] y_e;	
+	delete[] y_e;
 }

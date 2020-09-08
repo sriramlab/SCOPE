@@ -8,10 +8,17 @@
 class MatMult {
  public:
  	Genotype g;
-	MatrixXdr geno_matrix; //(p,n)
+	MatrixXdr geno_matrix;  // (p,n)
+
+	bool debug = false;
+	bool var_normalize = false;
+	bool memory_efficient = false;
+	bool missing = false;
+	bool fast_mode = true;
+	int nthreads = 1;
 
 	// How to batch columns:
-	int blocksize;
+	int blocksize;  // k
 	int hsegsize;  // = log_3(n)
 	int hsize;
 	int vsegsize;  // = log_3(p)
@@ -21,34 +28,23 @@ class MatMult {
 	double *sum_op;
 
 	// Intermediate computations in E-step.
-	// Size = 3^(log_3(n)) * k
-	double **yint_e;
-	//  n X k
-	double ***y_e;
+	double **yint_e;  // Size = 3^(log_3(n)) * k
+	double ***y_e;    // n X k
 
 	// Intermediate computations in M-step.
-	// Size = nthreads X 3^(log_3(n)) * k
-	double **yint_m;
-	//  nthreads X log_3(n) X k
-	double ***y_m;
+	double **yint_m;  // Size = nthreads X 3^(log_3(n)) * k
+	double ***y_m;    // nthreads X log_3(n) X k
 
-	clock_t total_begin; //= clock();
+	MatMult() {}
 
-	//options command_line_opts;
-	bool debug = false;
-	bool check_accuracy = false;
-	bool var_normalize = false;
-	int accelerated_em = 0;
-	double convergence_limit;
-	bool memory_efficient = false;
-	bool missing = false;
-	bool fast_mode = true;
-	bool text_version = false;
-	int nthreads = 1;
-	std::string output_path;
-
-	MatMult() {};
-	MatMult(Genotype &gg, int k);
+	MatMult(Genotype &xg,
+			bool xdebug,
+			bool xvar_normalize,
+			bool xmemory_efficient,
+			bool xmissing,
+			bool xfast_mode,
+			int xnthreads,
+			int xk);
 
 	void multiply_y_pre_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_m, double **y_m, double *partialsums, MatrixXdr &res);
 	void multiply_y_post_fast_thread(int begin, int end, MatrixXdr &op, int Ncol_op, double *yint_e, double **y_e, double *partialsums);
