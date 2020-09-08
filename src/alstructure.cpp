@@ -24,55 +24,55 @@ struct timespec t0;
 // https://stackoverflow.com/questions/34247057/how-to-read-csv-file-and-assign-to-eigen-matrix
 template<typename M>
 M load_tsv (const std::string & path) {
-    std::ifstream indata;
-    indata.open(path);
-    std::string line;
-    std::vector<double> values;
-    int rows = 0;
-    while (std::getline(indata, line)) {
-        std::stringstream lineStream(line);
-        std::string cell;
-        while (std::getline(lineStream, cell, '\t')) {
-            values.push_back(std::stod(cell));
-        }
-        ++rows;
-    }
-    return Eigen::Map<const Eigen::Matrix<typename M::Scalar, M::RowsAtCompileTime, M::ColsAtCompileTime, Eigen::RowMajor>>(values.data(), rows, values.size()/rows);
+	std::ifstream indata;
+	indata.open(path);
+	std::string line;
+	std::vector<double> values;
+	int rows = 0;
+	while (std::getline(indata, line)) {
+		std::stringstream lineStream(line);
+		std::string cell;
+		while (std::getline(lineStream, cell, '\t')) {
+			values.push_back(std::stod(cell));
+		}
+		++rows;
+	}
+	return Eigen::Map<const Eigen::Matrix<typename M::Scalar, M::RowsAtCompileTime, M::ColsAtCompileTime, Eigen::RowMajor>>(values.data(), rows, values.size()/rows);
 }
 
 
 double fix_interval(double x) {
-        /* Random function in Eigen generates numbers from a 
-         * uniform distribution on the interval [-1, 1].
-         * We need to map these values to the interval [0, 1].
-         * To map x in [a, b] to [c, d]
-         * f(x) = c + ((d-c)/(b-a)) * (x-a)
-         */
-        return (0.5 * (x + 1.0));
+	/* Random function in Eigen generates numbers from a 
+	 * uniform distribution on the interval [-1, 1].
+	 * We need to map these values to the interval [0, 1].
+	 * To map x in [a, b] to [c, d]
+	 * f(x) = c + ((d-c)/(b-a)) * (x-a)
+	 */
+	return (0.5 * (x + 1.0));
 }
 
 
 double divide_by_two(double x) {
-        return x / 2.0;
+	return x / 2.0;
 }
 
 
 double truncate_with_epsilon(double x) {
-        double epsilon = 0.0000000001;
-        if (x <= 0.0)
-                return epsilon;
-        if (x >= 1.0)
-                return 1.0 - epsilon;
-        return x;
+	double epsilon = 0.0000000001;
+	if (x <= 0.0)
+		return epsilon;
+	if (x >= 1.0)
+		return 1.0 - epsilon;
+	return x;
 }
 
 
 double truncate(double x) {
-        if (x < 0.0)
-                return 0.0;
-        if (x > 1.0)
-                return 1.0;
-        return x;
+	if (x < 0.0)
+		return 0.0;
+	if (x > 1.0)
+		return 1.0;
+	return x;
 }
 
 
@@ -338,15 +338,15 @@ int ALStructure::run() {
 
 	// Alec this is where I read in the file... 
 	// Read first d eigenvectors of the n x n matrix: G = (1/m) * (X^T X - D)
-    V = load_tsv<MatrixXdr>(command_line_opts.ROWSPACE_FILE_PATH);
-    k = V.cols();
+	V = load_tsv<MatrixXdr>(command_line_opts.ROWSPACE_FILE_PATH);
+	k = V.cols();
 
-    if (V.rows() != n) {
+	if (V.rows() != n) {
 		std::cout << "Dimensions of genotype matrix and rowspace matrix do not agree!" << std::endl;
-        exit(-1);
-    }
+		exit(-1);
+	}
 
-    clock_t io_end = clock();
+	clock_t io_end = clock();
 
 	mm = MatMult(g, debug, false, memory_efficient,
 				 missing, fast_mode, nthreads, k);
