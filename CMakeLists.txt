@@ -3,7 +3,11 @@ project(ProPCA)
 
 include_directories(include/)
 
-set(CMAKE_CXX_FLAGS "-std=c++0x -O3")
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(CMAKE_CXX_FLAGS "-std=c++0x -O3")
+else()
+    set(CMAKE_CXX_FLAGS "-std=c++0x -O3 -lrt")
+endif()
 
 IF (NOT DEFINED SSE_SUPPORT)
     SET(SSE_SUPPORT 0)
