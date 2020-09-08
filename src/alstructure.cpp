@@ -84,7 +84,7 @@ void project_onto_simplex(std::vector<double> &data) {
 
 	std::iota(inds.begin(), inds.end(), 0);
 
-	//std::stable_sort(inds.begin(), inds.end(), [&data](size_t i, size_t j) { return data[i] > data[j]; });
+	std::stable_sort(inds.begin(), inds.end(), [&data](size_t i, size_t j) { return data[i] > data[j]; });
 
 	double tmpsum = 0;
 	double tmax;
