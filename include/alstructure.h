@@ -39,6 +39,9 @@ class ALStructure {
 	MatrixXdr geno_matrix; //(p,n)
 	MatMult mm;
 
+	MatrixXdr D; //(n,1) for LSE
+	unsigned int nops; // number ops for LSE
+
 	MatrixXdr V;         // (n,k) for truncated ALS
 	MatrixXdr Fhat;      // (p,n) for truncated ALS
 	MatrixXdr Phat;      // (p,k) for truncated ALS
@@ -81,6 +84,11 @@ class ALStructure {
 	int run();
 
 	void write_matrix(MatrixXdr &mat, const std::string file_name);
+
+	unsigned int rows(); // rows for Spectra
+	unsigned int cols(); // cols for Spectra
+	void perform_op(const double* x_in, double* y_out); // operation for Spectra
+
 };
 
 #endif  // PROPCA_ALSTRUCTURE_H_

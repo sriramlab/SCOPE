@@ -412,6 +412,10 @@ int ALStructure::run() {
 
 	mm = MatMult(g, geno_matrix, debug, false, memory_efficient, missing, fast_mode, nthreads, k);
 
+	// Calculate D matrix
+	D = 2*geno_matrix.colwise().sum() - geno_matrix.colwise().squaredNorm();
+	write_matrix(D,"D.txt");
+
 	// Compute Fhat = (1/2) * (X V V^T)
 	if (fhat_version || fhattrunc_version) {
 		std::cout << "Explicitly computing Fhat";
@@ -479,4 +483,16 @@ int ALStructure::run() {
 	std::cout << "Wall clock time = " <<  wctduration.count() << std::endl;
 
 	return 0;
+}
+
+unsigned int ALStructure::cols(){
+	return  n;
+}
+
+unsigned int ALStructure::rows(){
+	return n;
+}
+
+void ALStructure::perform_op(const double* x_in, double* y_out){
+	return;
 }
