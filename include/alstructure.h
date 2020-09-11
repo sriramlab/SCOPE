@@ -39,7 +39,7 @@ class ALStructure {
 	MatrixXdr geno_matrix; //(p,n)
 	MatMult mm;
 
-	MatrixXdr D; //(n,1) for LSE
+	Eigen::VectorXd D; //(n,1) for LSE
 	unsigned int nops; // number ops for LSE
 
 	MatrixXdr V;         // (n,k) for truncated ALS

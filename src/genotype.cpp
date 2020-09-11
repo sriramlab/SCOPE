@@ -298,7 +298,9 @@ void Genotype::read_bed_mailman(std::string filename, bool allow_missing)  {
 	}
 
 	int sum = 0;
+	int sqsum = 0;
 	columnsum.resize(Nsnp);
+	colsqsum.resize(Nsnp);
 
 	// Note that the coding of 0 and 2 can get flipped relative to plink because plink uses allele frequency (minor)
 	// allele to code a SNP as 0 or 1.
@@ -348,11 +350,14 @@ void Genotype::read_bed_mailman(std::string filename, bool allow_missing)  {
 				val--;
 				val = (val < 0) ? 0 : val;
 				sum += val;
+				sqsum += val*val;
 				p[horiz_seg_no][j] = 3 * p[horiz_seg_no][j] + val;
 			}
     	}
 		columnsum[i] = sum;
+		colsqsum[i] = sqsum;
 		sum = 0;
+		sqsum = 0;
 	}
 	init_means(allow_missing);
 

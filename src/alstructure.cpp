@@ -420,8 +420,12 @@ int ALStructure::run() {
 	mm = MatMult(g, geno_matrix, debug, false, memory_efficient, missing, fast_mode, nthreads, k);
 
 	// Calculate D matrix
-	D = 2*geno_matrix.colwise().sum() - geno_matrix.colwise().squaredNorm();
-	if (debug) write_matrix(D,"D.txt");
+	D.resize(g.Nsnp);
+	for (int i = 0; i < g.Nsnp; ++i){
+		D[i] =  2 * g.columnsum[i] - g.colsqsum[i];
+	}
+	std::cout << "Computed D" << std::endl;
+	write_vector(D, "D.txt");
 
 	// Calculate V
 	Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE, ALStructure> eigs(this, k, k * 2 + 1);

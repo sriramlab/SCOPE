@@ -20,7 +20,6 @@ typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> M
 class Genotype {
 	std::vector< std::vector <bool> > msb;
 	std::vector< std::vector <bool> > lsb;
-	std::vector<int> columnsum;
 	std::vector<double> columnmeans;
 
  public:
@@ -37,6 +36,8 @@ class Genotype {
 	int Nbits_hori, Nbits_ver;
 	int Nelements_hori, Nelements_ver;
 	std::vector< std::vector<int> > p;
+	std::vector<int> columnsum;
+	std::vector<int> colsqsum;
 
 	// std::vector< std::vector<unsigned> > p_eff;
 	// std::vector< std::vector<unsigned> > q_eff;
