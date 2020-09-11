@@ -420,12 +420,11 @@ int ALStructure::run() {
 	mm = MatMult(g, geno_matrix, debug, false, memory_efficient, missing, fast_mode, nthreads, k);
 
 	// Calculate D matrix
-	D.resize(g.Nsnp);
+	D.resize(g.Nindv);
 	for (int i = 0; i < g.Nsnp; ++i){
 		D[i] =  2 * g.rowsum[i] - g.rowsqsum[i];
 	}
-	std::cout << "Computed D" << std::endl;
-	write_vector(D, "D.txt");
+	if (debug) write_vector(D, "D.txt");
 
 	// Calculate V
 	Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE, ALStructure> eigs(this, k, k * 2 + 1);
@@ -437,10 +436,6 @@ int ALStructure::run() {
 		write_matrix(U, "U.txt");
 		Eigen::VectorXd evals = eigs.eigenvalues().array() / (n-1);
 		write_vector(evals, "evals.txt");
-		Eigen::VectorXd s = evals.array().sqrt().inverse() / sqrt(n-1);
-		MatrixXdr V2;
-		V2.noalias() = geno_matrix.transpose() * U * s.asDiagonal();
-		write_matrix(V2, "V2.txt");
 	}
 	else {
 		throw new std::runtime_error(
@@ -526,8 +521,17 @@ unsigned int ALStructure::rows(){
 }
 
 void ALStructure::perform_op(const double* x_in, double* y_out){
-	Eigen::Map<const Eigen::VectorXd> x(x_in, n);
+	// Performs ((Xv)^T X)^T - Dv
+	MatrixXdr x = Eigen::Map<const Eigen::VectorXd> (x_in, n);
 	Eigen::Map<Eigen::VectorXd> y(y_out, n);
-	y.noalias() = geno_matrix.transpose() * (geno_matrix * x) - D.cwiseProduct(x);
+
+	MatrixXdr temp_px1(p,1);
+	mm.multiply_y_pre(x,1,temp_px1,false);
+	temp_px1.transposeInPlace(); // 1xp
+
+	MatrixXdr temp_1xn(1,n);
+	mm.multiply_y_post(temp_px1,1,temp_1xn,false);
+
+	y.noalias() = temp_1xn.transpose() - D.cwiseProduct(x);
 	nops++;
 }
