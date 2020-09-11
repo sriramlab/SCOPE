@@ -422,7 +422,7 @@ int ALStructure::run() {
 	// Calculate D matrix
 	D.resize(g.Nsnp);
 	for (int i = 0; i < g.Nsnp; ++i){
-		D[i] =  2 * g.columnsum[i] - g.colsqsum[i];
+		D[i] =  2 * g.rowsum[i] - g.rowsqsum[i];
 	}
 	std::cout << "Computed D" << std::endl;
 	write_vector(D, "D.txt");

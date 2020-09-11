@@ -21,6 +21,7 @@ class Genotype {
 	std::vector< std::vector <bool> > msb;
 	std::vector< std::vector <bool> > lsb;
 	std::vector<double> columnmeans;
+	std::vector<int> columnsum;
 
  public:
 	unsigned char mask;
@@ -36,8 +37,8 @@ class Genotype {
 	int Nbits_hori, Nbits_ver;
 	int Nelements_hori, Nelements_ver;
 	std::vector< std::vector<int> > p;
-	std::vector<int> columnsum;
-	std::vector<int> colsqsum;
+	std::vector<int> rowsum;
+	std::vector<int> rowsqsum;
 
 	// std::vector< std::vector<unsigned> > p_eff;
 	// std::vector< std::vector<unsigned> > q_eff;
