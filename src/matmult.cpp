@@ -1,5 +1,6 @@
 #include "matmult.h"
 #include "mailman.h"
+#include "helper.h"
 
 #include <iostream>
 #include <thread>

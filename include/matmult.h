@@ -3,7 +3,6 @@
 
 
 #include "genotype.h"
-#include "helper.h"
 
 class MatMult {
  public:

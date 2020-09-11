@@ -21,7 +21,6 @@
 #include "config.h"
 #include "storage.h"
 
-
 struct timespec t0;
 
 
