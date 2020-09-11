@@ -15,9 +15,10 @@
 #include <Eigen/SVD>
 #include <Eigen/QR>
 
+#include <Spectra/SymEigsSolver.h>
+
 #include "alstructure.h"
 #include "config.h"
-#include "helper.h"
 #include "storage.h"
 
 
@@ -349,6 +350,13 @@ void ALStructure::write_matrix(MatrixXdr &mat, const std::string file_name) {
 	fp.close();
 }
 
+void ALStructure::write_vector(Eigen::VectorXd &vec, const std::string file_name){
+	std::ofstream fp;
+	fp.open((command_line_opts.OUTPUT_PATH + file_name).c_str());
+	fp << std::setprecision(15) << vec << std::endl;
+	fp.close();
+}
+
 int ALStructure::run() {
 	memory_efficient = command_line_opts.memory_efficient;
 	text_version = command_line_opts.text_version;
@@ -414,7 +422,28 @@ int ALStructure::run() {
 
 	// Calculate D matrix
 	D = 2*geno_matrix.colwise().sum() - geno_matrix.colwise().squaredNorm();
-	write_matrix(D,"D.txt");
+	if (debug) write_matrix(D,"D.txt");
+
+	// Calculate V
+	Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE, ALStructure> eigs(this, k, k * 2 + 1);
+	eigs.init();
+	eigs.compute(MAX_ITER, convergence_limit);
+
+	if (eigs.info() == Spectra::SUCCESSFUL){
+		MatrixXdr U = eigs.eigenvectors();
+		write_matrix(U, "U.txt");
+		Eigen::VectorXd evals = eigs.eigenvalues().array() / (n-1);
+		write_vector(evals, "evals.txt");
+		Eigen::VectorXd s = evals.array().sqrt().inverse() / sqrt(n-1);
+		MatrixXdr V2;
+		V2.noalias() = geno_matrix.transpose() * U * s.asDiagonal();
+		write_matrix(V2, "V2.txt");
+	}
+	else {
+		throw new std::runtime_error(
+			std::string("Spectra eigendecomposition unsucessful") + ", status" + std::to_string(eigs.info())
+		);
+	}
 
 	// Compute Fhat = (1/2) * (X V V^T)
 	if (fhat_version || fhattrunc_version) {
@@ -486,7 +515,7 @@ int ALStructure::run() {
 }
 
 unsigned int ALStructure::cols(){
-	return  n;
+	return n;
 }
 
 unsigned int ALStructure::rows(){
@@ -494,5 +523,8 @@ unsigned int ALStructure::rows(){
 }
 
 void ALStructure::perform_op(const double* x_in, double* y_out){
-	return;
+	Eigen::Map<const Eigen::VectorXd> x(x_in, n);
+	Eigen::Map<Eigen::VectorXd> y(y_out, n);
+	y.noalias() = geno_matrix.transpose() * (geno_matrix * x) - D.cwiseProduct(x);
+	nops++;
 }

@@ -19,7 +19,6 @@
 #include <Eigen/QR>
 
 #include "config.h"
-#include "helper.h"
 #include "storage.h"
 
 
