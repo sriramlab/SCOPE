@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(ProPCA)
 
-set(SPECTRA_INC /home/alecmchiu/lib/include)
+set(SPECTRA_INC "/home/alecmchiu/lib/include")
 
 include_directories(include/ ${SPECTRA_INC})
 
