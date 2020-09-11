@@ -27,6 +27,8 @@ float Genotype::get_observed_pj(const std::string &line) {
 		if (val == 0 || val == 1 || val == 2) {
 			observed_sum += val;
 			observed_ct++;
+			rowsum[j] += val;
+			rowsqsum[j] += val*val;
 		}
 	}
 
@@ -110,6 +112,8 @@ void Genotype::read_txt_naive(std::string filename, bool allow_missing) {
 	}
 
 	int i = 0;
+	rowsum.resize(Nindv);
+	rowsqsum.resize(Nindv);
 
 	std::vector <bool> m;
 	std::vector <bool> l;
@@ -182,6 +186,9 @@ void Genotype::read_txt_mailman(std::string filename, bool allow_missing) {
 	}
 
 	int i = 0;
+	rowsum.resize(Nindv);
+	rowsqsum.resize(Nindv);
+
 	while (std::getline(ifs, line)) {
 		float p_j = get_observed_pj(line);
 
@@ -382,6 +389,8 @@ void Genotype::read_bed_naive(std::string filename, bool allow_missing) {
 
 	int sum = 0;
 	columnsum.resize(Nsnp);
+	rowsum.resize(Nindv);
+	rowsqsum.resize(Nindv);
 
 	// Note that the coding of 0 and 2 can get flipped relative to plink because plink uses allele frequency (minor)
 	// allele to code a SNP as 0 or 1.
