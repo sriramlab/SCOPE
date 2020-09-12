@@ -131,10 +131,12 @@ ALStructure::ALStructure(int argc, char const *argv[]) {
 	command_line_opts.nthreads = 1;
 	command_line_opts.seed = -1;
 	command_line_opts.given_seed = false;
+	nops = 0;
 
 
 	if (argc < 3) {
-		std::cout << "Correct Usage is " << argv[0] << " -p <parameter file>" << std::endl;
+		printCorrectUsage();
+		//std::cout << "Correct Usage is " << argv[0] << " -p <parameter file>" << std::endl;
 		exit(-1);
 	}
 
@@ -357,6 +359,9 @@ void ALStructure::write_vector(Eigen::VectorXd &vec, const std::string file_name
 }
 
 int ALStructure::run() {
+
+	total_begin = clock();
+
 	memory_efficient = command_line_opts.memory_efficient;
 	text_version = command_line_opts.text_version;
 	fhat_version = command_line_opts.fhat_version;
@@ -388,6 +393,7 @@ int ALStructure::run() {
 
 	p = g.Nsnp;
 	n = g.Nindv;
+	k = command_line_opts.num_of_evec;
 
 	// TODO: Implement these codes.
 	if (missing) {
@@ -406,41 +412,64 @@ int ALStructure::run() {
 		if (debug) write_matrix(geno_matrix, "X.txt");
 	}
 
-	// Read eigenvectors of the n x n matrix: G = (1/m) * (X^T X - D)
-	V = load_tsv<MatrixXdr>(command_line_opts.ROWSPACE_FILE_PATH);
-	k = V.cols();
-
-	if (V.rows() != n) {
-		std::cout << "Dimensions of genotype matrix and rowspace matrix do not agree!" << std::endl;
-		exit(-1);
-	}
-
 	clock_t io_end = clock();
+
+	std::cout << "Running on Dataset of " << p << " SNPs and " << n << " Individuals" << std::endl;
+
+	#if SSE_SUPPORT == 1
+		if (fast_mode)
+			std::cout << "Using Optimized SSE FastMultiply" << std::endl;
+	#endif
+
+	clock_t it_begin = clock();
 
 	mm = MatMult(g, geno_matrix, debug, false, memory_efficient, missing, fast_mode, nthreads, k);
 
-	// Calculate D matrix
-	D.resize(g.Nindv);
-	for (int i = 0; i < g.Nsnp; ++i){
-		D[i] =  2 * g.rowsum[i] - g.rowsqsum[i];
-	}
-	if (debug) write_vector(D, "D.txt");
+	if (std::string(command_line_opts.ROWSPACE_FILE_PATH) != ""){
+		std::cout << "Using provided V" << std::endl;
 
-	// Calculate V
-	Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE, ALStructure> eigs(this, k, k * 2 + 1);
-	eigs.init();
-	eigs.compute(MAX_ITER, convergence_limit);
+	// Read eigenvectors of the n x n matrix: G = (1/m) * (X^T X - D)
+		V = load_tsv<MatrixXdr>(command_line_opts.ROWSPACE_FILE_PATH);
+		if (k != V.cols()){
+			k = V.cols();
+			std::cout << "Mismatch between column number of provided V and provided k!" << std::endl;
+			std::cout << "Changing k to number of columns in V" << std::endl;
+		}
 
-	if (eigs.info() == Spectra::SUCCESSFUL){
-		MatrixXdr U = eigs.eigenvectors();
-		write_matrix(U, "U.txt");
-		Eigen::VectorXd evals = eigs.eigenvalues().array() / (n-1);
-		write_vector(evals, "evals.txt");
+		if (V.rows() != n) {
+			std::cout << "Dimensions of genotype matrix and rowspace matrix do not agree!" << std::endl;
+			exit(-1);
+		}
 	}
 	else {
-		throw new std::runtime_error(
-			std::string("Spectra eigendecomposition unsucessful") + ", status" + std::to_string(eigs.info())
-		);
+		std::cout << "Performing latent subspace estimation" << std::endl;
+
+		// Calculate D matrix
+		D.resize(g.Nindv);
+		for (int i = 0; i < g.Nsnp; ++i){
+			D[i] =  2 * g.rowsum[i] - g.rowsqsum[i];
+		}
+		if (debug) write_vector(D, "D.txt");
+
+		// Calculate V
+		Spectra::SymEigsSolver<double, Spectra::LARGEST_ALGE, ALStructure> eigs(this, k, k * 2 + 1);
+		eigs.init();
+		eigs.compute(MAX_ITER, convergence_limit);
+
+		if (eigs.info() == Spectra::SUCCESSFUL){
+			V = eigs.eigenvectors();
+			write_matrix(V, "V.txt");
+			if (debug){
+				Eigen::VectorXd evals = eigs.eigenvalues().array() / (n-1);
+				write_vector(evals, "evals.txt");
+			}
+			std::cout << "Latent subspace esimation completed after " << nops << " iterations" << std::endl;
+		}
+		else {
+			throw new std::runtime_error(
+				std::string("Spectra eigendecomposition unsucessful") + ", status" + std::to_string(eigs.info())
+			);
+		}
 	}
 
 	// Compute Fhat = (1/2) * (X V V^T)
@@ -462,15 +491,6 @@ int ALStructure::run() {
 		}
 		std::cout << std::endl;
 	}
-
-	std::cout << "Running on Dataset of " << p << " SNPs and " << n << " Individuals" << std::endl;
-
-	#if SSE_SUPPORT == 1
-		if (fast_mode)
-			std::cout << "Using Optimized SSE FastMultiply" << std::endl;
-	#endif
-
-	clock_t it_begin = clock();
 
 	if (std::string(command_line_opts.INITIAL_FILE_PATH) != "") {
 		std::cout << "Using initial Phat provided" << std::endl; 
@@ -502,8 +522,9 @@ int ALStructure::run() {
 
 	clock_t total_end = clock();
 	double io_time = static_cast<double>(io_end - io_begin) / CLOCKS_PER_SEC;
-	double avg_it_time = static_cast<double>(it_end - it_begin) / (MAX_ITER * 1.0 * CLOCKS_PER_SEC);
+	//double avg_it_time = static_cast<double>(it_end - it_begin) / (MAX_ITER * 1.0 * CLOCKS_PER_SEC);
 	double total_time = static_cast<double>(total_end - total_begin) / CLOCKS_PER_SEC;
+	std::cout << "Completed!" << std::endl;
 	std::cout << "IO Time:  " << io_time << "\nAVG Iteration Time:  " << avg_it_time << "\nTotal runtime:   " << total_time << std::endl;
 
 	std::chrono::duration<double> wctduration = std::chrono::system_clock::now() - start;
@@ -528,6 +549,7 @@ void ALStructure::perform_op(const double* x_in, double* y_out){
 	MatrixXdr temp_px1(p,1);
 	mm.multiply_y_pre(x,1,temp_px1,false);
 	temp_px1.transposeInPlace(); // 1xp
+
 
 	MatrixXdr temp_1xn(1,n);
 	mm.multiply_y_post(temp_px1,1,temp_1xn,false);
