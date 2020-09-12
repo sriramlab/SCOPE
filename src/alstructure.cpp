@@ -131,7 +131,7 @@ ALStructure::ALStructure(int argc, char const *argv[]) {
 	command_line_opts.nthreads = 1;
 	command_line_opts.seed = -1;
 	command_line_opts.given_seed = false;
-	nops = 0;
+	nops = 1;
 
 
 	if (argc < 3) {
@@ -446,7 +446,7 @@ int ALStructure::run() {
 
 		// Calculate D matrix
 		D.resize(g.Nindv);
-		for (int i = 0; i < g.Nsnp; ++i){
+		for (int i = 0; i < g.Nindv; ++i){
 			D[i] =  2 * g.rowsum[i] - g.rowsqsum[i];
 		}
 		if (debug) write_vector(D, "D.txt");
@@ -550,7 +550,6 @@ void ALStructure::perform_op(const double* x_in, double* y_out){
 	MatrixXdr temp_px1(p,1);
 	mm.multiply_y_pre(x,1,temp_px1,false);
 	temp_px1.transposeInPlace(); // 1xp
-
 
 	MatrixXdr temp_1xn(1,n);
 	mm.multiply_y_post(temp_px1,1,temp_1xn,false);
