@@ -243,7 +243,7 @@ void ALStructure::printCorrectUsage(void) {
 	std::cout << "Correct Usage: "
 			  << "run_alstructure \\\n"
 			  << "    -g <genotype file> \\\n"
-			  << "    -r <rowspace file> \\\n"
+			  << "    -k <latent dimension> \\\n"
 			  << "    -m <maximum number of iterations> \\\n"
 			  << "    -v (for debug mode) \\\n"
 			  << std::endl;
@@ -525,7 +525,8 @@ int ALStructure::run() {
 	//double avg_it_time = static_cast<double>(it_end - it_begin) / (MAX_ITER * 1.0 * CLOCKS_PER_SEC);
 	double total_time = static_cast<double>(total_end - total_begin) / CLOCKS_PER_SEC;
 	std::cout << "Completed!" << std::endl;
-	std::cout << "IO Time:  " << io_time << "\nAVG Iteration Time:  " << avg_it_time << "\nTotal runtime:   " << total_time << std::endl;
+	std::cout << "IO Time:  " << io_time << std::endl;
+	std::cout << "Total runtime:   " << total_time << std::endl;
 
 	std::chrono::duration<double> wctduration = std::chrono::system_clock::now() - start;
 	std::cout << "Wall clock time = " <<  wctduration.count() << std::endl;
