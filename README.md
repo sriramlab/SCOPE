@@ -1,18 +1,9 @@
-# Scalable and flexible Probabilistic PCA for large-scale genetic variation data
 
-We propose a scalable and exact algorithm to compute principal components on genetic variation data. Our method is based on a previously proposed latent variable model for probabilistic PCA, PPCA (Roweis 1999, Tipping and Bishop 1999), of which PCA arises in the small variance limit. The latent variable model formulation leads to an iterative EM algorithm for computing the principal components with time complexity O(KMN) to compute K principal components on N individuals and M SNPs per iteration.
+## TODO List:
 
-## Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
-
-## Citation
-
-Please cite our manuscript if you use our software.
-
-```
-Agrawal A, Chiu AM, Le M, Halperin E, Sankararaman S (2020) Scalable probabilistic PCA for large-scale genetic variation data. PLOS Genetics 16(5): e1008773. https://doi.org/10.1371/journal.pgen.1008773
-```
+1. Mailman SSE instructions fix
+2. Clean up command line options
+3. Checking multithreading mode
 
 ### Prerequisites
 
@@ -42,7 +33,7 @@ If your architecure is Intel and supports SSE instructions, build with the cmake
 
 
 ```
-cmake -D SSE_SUPPORT=1 -D DEBUG=1 ..
+cmake -D SSE_SUPPORT=0 -D DEBUG=1 ..
 make
 ```
 
@@ -52,7 +43,6 @@ Else just issue these commands below:
 cmake ..
 make
 ```
-
 
 
 ## Documentation for ProPCA
@@ -123,33 +113,11 @@ The inout can be in the plink binary format, as descibed at [Plink BED](https://
 
 Make sure to set the text_version to false in the parameter file, or don't use the -txt command line flag, when running. 
 
-## TODO List:
-
-1. Add Missing version which runs on Naive EM.
-2. Memory Effecient version of Mailman EM
-3. Add Variance normalized version for Missing EM.
-4. Improvize the memory requirements for naive EM and not memory effecient code.
-5. Initialize C with gaussian distribution.
-6. Memory Effecient SSE Multiply
-
 ## Built With
 
 * [Eigen](http://eigen.tuxfamily.org/) - The Linear algebra library for C++
 
-## Authors
-
-* **Aman Agrawal** - [http://www.cse.iitd.ernet.in/~cs1150210/](http://www.cse.iitd.ernet.in/~cs1150210/)
-* **Alec Chiu** - [alecmchiu.github.io](alecmchiu.github.io)
-
-See also the list of [contributors](https://github.com/aman71197/ProPCA/graphs/contributors) who participated in this project.
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-Project completed under the guidance of
-
-* **Sriram Sankararaman** - [http://web.cs.ucla.edu/~sriram/](http://web.cs.ucla.edu/~sriram/)
-* **Eran Halperin** - [http://www1.icsi.berkeley.edu/~heran/](http://www1.icsi.berkeley.edu/~heran/)
