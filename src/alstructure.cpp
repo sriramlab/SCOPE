@@ -90,7 +90,7 @@ void project_onto_simplex(std::vector<double> &data) {
 	double tmax;
 	bool bget = false;
 
-	for(int i = 1; i < data.size(); i++){
+	for (int i = 1; i < data.size(); i++) {
 		tmpsum = tmpsum + data[inds[i - 1]];
 		tmax = (tmpsum - 1.0) / i;
 		if (tmax >= data[inds[i]]) {
@@ -282,28 +282,31 @@ void ALStructure::solve_for_Phat() {
 }
 
 
-void ALStructure::initialize() {
-	if (command_line_opts.given_seed) {
-		srand(seed);
-	} else {
-		seed = (unsigned int) time(0);
-		srand(seed);
+void ALStructure::initialize(std::default_random_engine &prng_eng) {
+	if (!command_line_opts.given_seed) {
+		seed = static_cast<unsigned int>(time(NULL));
 	}
 
 	std::cout << "Initializing Phat using seed " << seed << std::endl;
 
-	Phat = MatrixXdr::Random(p, k);
-	Phat = Phat.unaryExpr(&fix_interval);
-	if (debug) write_matrix(Phat, std::string("Phat_0.txt"));
+	// srand(seed);
+	prng_eng.seed(seed);
+
+	// Phat = MatrixXdr::Random(p, k);
+	// Phat = Phat.unaryExpr(&fix_interval);
+	std::uniform_real_distribution<double> dis(0, 1);
+	Phat = MatrixXdr::Zero(p, k).unaryExpr([&](float dummy){return dis(prng_eng);});
+
+	if (debug) write_matrix(Phat, std::string("Phat_0_") + std::to_string(seed) +  std::string(".txt"));
 }
 
 
 void ALStructure::truncated_alternating_least_squares() {
 	solve_for_Qhat();
-	write_matrix(Qhat, std::string("Qhat_0.txt"));
+	if (debug) write_matrix(Qhat, std::string("Qhat_0.txt"));
 
 	solve_for_Phat();
-	write_matrix(Phat, std::string("Phat_1.txt"));
+	if (debug) write_matrix(Phat, std::string("Phat_1.txt"));
 
 	for (niter = 1; niter < MAX_ITER; niter++) {
 		Qhat_old = Qhat;
@@ -351,7 +354,7 @@ void ALStructure::write_matrix(MatrixXdr &mat, const std::string file_name) {
 	fp.close();
 }
 
-void ALStructure::write_vector(Eigen::VectorXd &vec, const std::string file_name){
+void ALStructure::write_vector(Eigen::VectorXd &vec, const std::string file_name) {
 	std::ofstream fp;
 	fp.open((command_line_opts.OUTPUT_PATH + file_name).c_str());
 	fp << std::setprecision(15) << vec << std::endl;
@@ -425,12 +428,12 @@ int ALStructure::run() {
 
 	mm = MatMult(g, geno_matrix, debug, false, memory_efficient, missing, fast_mode, nthreads, k);
 
-	if (std::string(command_line_opts.ROWSPACE_FILE_PATH) != ""){
+	if (std::string(command_line_opts.ROWSPACE_FILE_PATH) != "") {
 		std::cout << "Using provided V" << std::endl;
 
 	// Read eigenvectors of the n x n matrix: G = (1/m) * (X^T X - D)
 		V = load_tsv<MatrixXdr>(command_line_opts.ROWSPACE_FILE_PATH);
-		if (k != V.cols()){
+		if (k != V.cols()) {
 			k = V.cols();
 			std::cout << "Mismatch between column number of provided V and provided k!" << std::endl;
 			std::cout << "Changing k to number of columns in V" << std::endl;
@@ -440,13 +443,12 @@ int ALStructure::run() {
 			std::cout << "Dimensions of genotype matrix and rowspace matrix do not agree!" << std::endl;
 			exit(-1);
 		}
-	}
-	else {
+	} else {
 		std::cout << "Performing latent subspace estimation" << std::endl;
 
 		// Calculate D matrix
 		D.resize(g.Nindv);
-		for (int i = 0; i < g.Nindv; ++i){
+		for (int i = 0; i < g.Nindv; ++i) {
 			D[i] =  2 * g.rowsum[i] - g.rowsqsum[i];
 		}
 		if (debug) write_vector(D, "D.txt");
@@ -456,10 +458,10 @@ int ALStructure::run() {
 		eigs.init();
 		eigs.compute(MAX_ITER, convergence_limit);
 
-		if (eigs.info() == Spectra::SUCCESSFUL){
+		if (eigs.info() == Spectra::SUCCESSFUL) {
 			V = eigs.eigenvectors();
 			write_matrix(V, "V.txt");
-			if (debug){
+			if (debug) {
 				Eigen::VectorXd evals = eigs.eigenvalues().array() / (n-1);
 				write_vector(evals, "evals.txt");
 			}
@@ -492,20 +494,23 @@ int ALStructure::run() {
 		std::cout << std::endl;
 	}
 
+	// Create pseudo random number generator (PRNG) engine
+	std::default_random_engine prng_eng{};
+
 	if (std::string(command_line_opts.INITIAL_FILE_PATH) != "") {
 		std::cout << "Using initial Phat provided" << std::endl; 
 		Phat = load_tsv<MatrixXdr>(command_line_opts.INITIAL_FILE_PATH);
 	} else {
-		initialize();
+		initialize(prng_eng);
 	}
 
 	truncated_alternating_least_squares();
 
-	// Restart!
+	// Try restarting with new seed!
 	if (std::isnan(rmse) && (std::string(command_line_opts.INITIAL_FILE_PATH) == "")) {
 		command_line_opts.given_seed = false;
 		for (int xx = 0; xx < 5; xx++) {
-			initialize();
+			initialize(prng_eng);
 			truncated_alternating_least_squares();
 			if (!std::isnan(rmse)) {
 				break;
@@ -534,15 +539,15 @@ int ALStructure::run() {
 	return 0;
 }
 
-unsigned int ALStructure::cols(){
+unsigned int ALStructure::cols() {
 	return n;
 }
 
-unsigned int ALStructure::rows(){
+unsigned int ALStructure::rows() {
 	return n;
 }
 
-void ALStructure::perform_op(const double* x_in, double* y_out){
+void ALStructure::perform_op(const double* x_in, double* y_out) {
 	// Performs ((Xv)^T X)^T - Dv
 	MatrixXdr x = Eigen::Map<const Eigen::VectorXd> (x_in, n);
 	Eigen::Map<Eigen::VectorXd> y(y_out, n);
