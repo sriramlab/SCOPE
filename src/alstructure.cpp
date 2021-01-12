@@ -43,6 +43,32 @@ M load_tsv (const std::string & path) {
 	return Eigen::Map<const Eigen::Matrix<typename M::Scalar, M::RowsAtCompileTime, M::ColsAtCompileTime, Eigen::RowMajor>>(values.data(), rows, values.size()/rows);
 }
 
+template<typename M>
+M read_plink_freq_file (const std::string &path, int k) {
+	/*
+	Reads from plink.frq.strat file to initialize P matrix
+	Returns rows/k x k matrix, where rows in number of rows
+		in file
+	*/
+        std::ifstream indata;
+        indata.open(path);
+        std::string line;
+        std::vector<double> values;
+        int rows = 1;
+        std::getline(indata, line);
+        while (std::getline(indata, line)) {
+                std::stringstream lineStream(line);
+                std::string cell;
+                std::vector<std::string> seglist;
+                while (lineStream >> cell){
+                        seglist.push_back(cell);
+                }
+                values.push_back(std::stod(seglist[5]));
+                ++rows;
+        }
+        return Eigen::Map<const Eigen::Matrix<typename M::Scalar, M::RowsAtCompileTime, M::ColsAtCompileTime, Eigen::RowMajor>>(values.data(), rows/k, k);
+}
+
 
 double fix_interval(double x) {
 	/* Random function in Eigen generates numbers from a 
@@ -120,6 +146,7 @@ ALStructure::ALStructure(int argc, char const *argv[]) {
 	command_line_opts.OUTPUT_PATH = "alstructure_";
 	bool got_genotype_file = false;
 	bool got_rowspace_file = false;
+	bool got_freq_file = false;
 	command_line_opts.convergence_limit = 0.00001;  // Used by R code
 	command_line_opts.max_iterations = 1000;        // Used by R code
 	command_line_opts.memory_efficient = false;
@@ -171,6 +198,11 @@ ALStructure::ALStructure(int argc, char const *argv[]) {
 					command_line_opts.ROWSPACE_FILE_PATH = std::string(argv[i+1]);
 					got_rowspace_file = true;
 					i++;
+				else if (strcmp(argv[i], "-freq") == 0) {
+					command_line_opts.FREQ_FILE_PATH = std::string(argv[i+1]);
+					got_freq_file = true;
+					i++;
+				}
 				} else if (strcmp(argv[i], "-i") == 0) {
 					command_line_opts.INITIAL_FILE_PATH = std::string(argv[i+1]);
 					i++;
@@ -500,7 +532,14 @@ int ALStructure::run() {
 	if (std::string(command_line_opts.INITIAL_FILE_PATH) != "") {
 		std::cout << "Using initial Phat provided" << std::endl; 
 		Phat = load_tsv<MatrixXdr>(command_line_opts.INITIAL_FILE_PATH);
-	} else {
+	} 
+	else if (std::string(command_line_opts.FREQ_FILE_PATH) != ""){
+		std::cout << "Using given frequencies" << std::endl;
+		std::cout << "Algorithm will run for single iteration" << std::endl;
+		Phat = read_plink_freq_file<MatrixXdr>(command_line_opts.FREQ_FILE_PATH,k);
+		MAX_ITER = 1;
+	}
+	else {
 		initialize(prng_eng);
 	}
 
