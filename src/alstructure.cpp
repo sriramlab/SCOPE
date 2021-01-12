@@ -198,11 +198,10 @@ ALStructure::ALStructure(int argc, char const *argv[]) {
 					command_line_opts.ROWSPACE_FILE_PATH = std::string(argv[i+1]);
 					got_rowspace_file = true;
 					i++;
-				else if (strcmp(argv[i], "-freq") == 0) {
+				} else if (strcmp(argv[i], "-freq") == 0) {
 					command_line_opts.FREQ_FILE_PATH = std::string(argv[i+1]);
 					got_freq_file = true;
 					i++;
-				}
 				} else if (strcmp(argv[i], "-i") == 0) {
 					command_line_opts.INITIAL_FILE_PATH = std::string(argv[i+1]);
 					i++;
