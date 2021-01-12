@@ -13,6 +13,7 @@ struct options {
 	std::string GENOTYPE_FILE_PATH;
 	std::string ROWSPACE_FILE_PATH;
 	std::string INITIAL_FILE_PATH;
+	std::string FREQ_FILE_PATH;
 	std::string OUTPUT_PATH;
 	int max_iterations;
 	int num_of_evec;
