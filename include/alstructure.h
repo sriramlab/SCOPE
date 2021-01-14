@@ -80,7 +80,7 @@ class ALStructure {
 	void solve_for_Phat(void);
 
 	void initialize(std::default_random_engine &prng_eng);
-	void truncated_alternating_least_squares(void);
+	void truncated_alternating_least_squares(bool projection_mode = false);
 
 	int run();
 

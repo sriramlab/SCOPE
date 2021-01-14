@@ -540,8 +540,6 @@ int ALStructure::run() {
 		Phat = load_tsv<MatrixXdr>(command_line_opts.INITIAL_FILE_PATH);
 	} 
 	else if (std::string(command_line_opts.FREQ_FILE_PATH) != ""){
-		std::cout << "Using given frequencies" << std::endl;
-		std::cout << "Algorithm will run for single iteration" << std::endl;
 		Phat = read_plink_freq_file<MatrixXdr>(command_line_opts.FREQ_FILE_PATH,k);
 		MAX_ITER = 1;
 	}
@@ -549,16 +547,21 @@ int ALStructure::run() {
 		initialize(prng_eng);
 	}
 
-	truncated_alternating_least_squares();
+	if (std::string(command_line_opts.FREQ_FILE_PATH) != ""){
+		truncated_alternating_least_squares(true);
+	}
+	else {
+		truncated_alternating_least_squares();
 
-	// Try restarting with new seed!
-	if (std::isnan(rmse) && (std::string(command_line_opts.INITIAL_FILE_PATH) == "")) {
-		command_line_opts.given_seed = false;
-		for (int xx = 0; xx < 5; xx++) {
-			initialize(prng_eng);
-			truncated_alternating_least_squares();
-			if (!std::isnan(rmse)) {
-				break;
+		// Try restarting with new seed!
+		if (std::isnan(rmse) && (std::string(command_line_opts.INITIAL_FILE_PATH) == "")) {
+			command_line_opts.given_seed = false;
+			for (int xx = 0; xx < 5; xx++) {
+				initialize(prng_eng);
+				truncated_alternating_least_squares();
+				if (!std::isnan(rmse)) {
+					break;
+				}
 			}
 		}
 	}
