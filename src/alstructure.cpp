@@ -332,7 +332,14 @@ void ALStructure::initialize(std::default_random_engine &prng_eng) {
 }
 
 
-void ALStructure::truncated_alternating_least_squares() {
+void ALStructure::truncated_alternating_least_squares(bool projection_mode = false) {
+
+	if (projection_mode){
+		std::cout << "Solving for Q using provided frequencies" << std::endl;
+		solve_for_Qhat();
+		return;
+	}
+
 	solve_for_Qhat();
 	if (debug) write_matrix(Qhat, std::string("Qhat_0.txt"));
 
