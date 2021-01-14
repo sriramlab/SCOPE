@@ -337,6 +337,20 @@ void ALStructure::truncated_alternating_least_squares(bool projection_mode) {
 	if (projection_mode){
 		std::cout << "Solving for Q using provided frequencies" << std::endl;
 		solve_for_Qhat();
+		std::vector<double> col;
+		col.resize(k);
+		for (int c_iter = 0; c_iter < n; c_iter++) {
+ 			//VectorXd::Map(&col[0], d) = Qhat.col(c_iter);
+			for (int r_iter = 0; r_iter < k; r_iter++) {
+				col[r_iter] = Qhat(r_iter, c_iter);
+			}
+
+			project_onto_simplex(col);
+
+			for (int r_iter = 0; r_iter < k; r_iter++) {
+				Qhat(r_iter, c_iter) = col[r_iter];
+			}
+		}
 		return;
 	}
 
