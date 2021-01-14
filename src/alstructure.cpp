@@ -332,7 +332,7 @@ void ALStructure::initialize(std::default_random_engine &prng_eng) {
 }
 
 
-void ALStructure::truncated_alternating_least_squares(bool projection_mode = false) {
+void ALStructure::truncated_alternating_least_squares(bool projection_mode) {
 
 	if (projection_mode){
 		std::cout << "Solving for Q using provided frequencies" << std::endl;
