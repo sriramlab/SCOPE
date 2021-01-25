@@ -63,7 +63,7 @@ M read_plink_freq_file (const std::string &path, int k) {
                 while (lineStream >> cell){
                         seglist.push_back(cell);
                 }
-                values.push_back(std::stod(seglist[5]));
+                values.push_back(1-std::stod(seglist[5]));
                 ++rows;
         }
         return Eigen::Map<const Eigen::Matrix<typename M::Scalar, M::RowsAtCompileTime, M::ColsAtCompileTime, Eigen::RowMajor>>(values.data(), rows/k, k);
