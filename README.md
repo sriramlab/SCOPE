@@ -1,9 +1,4 @@
-
-## TODO List:
-
-1. Mailman SSE instructions fix
-2. Clean up command line options
-3. Checking multithreading mode
+# SCOPE - (SCalable pOPulation structure inferencE)
 
 ### Prerequisites
 
@@ -17,33 +12,16 @@ make
 
 ### Installing
 
-Installing ProPCA is fairly simple. Just issue the following commands on a linux machine
+Installing SCOPE is fairly simple. Just issue the following commands on a linux machine
 
 ```
-git clone https://github.com/sriramlab/ProPCA.git
-cd ProPCA
+git clone https://github.com/sriramlab/SCOPE.git
+cd SCOPE
 mkdir build
 cd build
-```
-By default, the release version is built, if you wish to build the debug version, build with cmake flag `-D DEBUG=1` as shown below.
-
-ProPCA supports, [SSE](https://en.wikipedia.org/wiki/Streaming_SIMD_Extensions) instructions.
-
-If your architecure is Intel and supports SSE instructions, build with the cmake flag `-D SSE_SUPPORT=1` for an faster improved version as shown below.
-
-
-```
-cmake -D SSE_SUPPORT=0 -D DEBUG=1 ..
-make
-```
-
-Else just issue these commands below:
-
-```
 cmake ..
 make
 ```
-
 
 ## Documentation for ProPCA
 
@@ -93,20 +71,6 @@ The equivalent command to issue for running the same code from the examples dire
 
 ProPCA wil generate three files containing the eigenvectors/principal components, projections, and eigenvalues.
 
-### Genotype File
-
-There are two ways to provide input:
-
-#### First:
-
-The genotype file is modified EigenStrat format. 
-
-The first line of the genotype file contains two space separated integers denoting the number of SNPs and the number of Individuals respectively.
-
-Each line after represent each row of the genotype matrix where each row corresponds to a SNP and each entry is either 0,1 or 2 representing the number of allele in the corresponding individual at that SNP. If the entry is missing it is represented as 9.
-
-Look at the example.geno file in the examples directory to get a better understanding. 
-
 #### Second:
 
 The inout can be in the plink binary format, as descibed at [Plink BED](https://www.cog-genomics.org/plink/1.9/input#bed)
@@ -116,7 +80,6 @@ Make sure to set the text_version to false in the parameter file, or don't use t
 ## Built With
 
 * [Eigen](http://eigen.tuxfamily.org/) - The Linear algebra library for C++
-
 
 ## License
 
