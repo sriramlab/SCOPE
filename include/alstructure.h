@@ -85,6 +85,7 @@ class ALStructure {
 	int run();
 
 	void write_matrix(MatrixXdr &mat, const std::string file_name);
+	void write_matrix_maf(MatrixXdr &mat, const std::string file_name);
 	void write_vector(Eigen::VectorXd &vec, const std::string file_name);
 
 	unsigned int rows();  // rows for Spectra

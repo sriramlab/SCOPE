@@ -406,6 +406,13 @@ void ALStructure::write_matrix(MatrixXdr &mat, const std::string file_name) {
 	fp.close();
 }
 
+void ALStructure::write_matrix_maf(MatrixXdr &mat, const std::string file_name) {
+        std::ofstream fp;
+        fp.open((command_line_opts.OUTPUT_PATH + file_name).c_str());
+        fp << std::setprecision(15) << 1 - mat.array() << std::endl;
+        fp.close();
+}
+
 void ALStructure::write_vector(Eigen::VectorXd &vec, const std::string file_name) {
 	std::ofstream fp;
 	fp.open((command_line_opts.OUTPUT_PATH + file_name).c_str());
@@ -582,7 +589,7 @@ int ALStructure::run() {
 
 	clock_t it_end = clock();
 
-	write_matrix(Phat, "Phat.txt");
+	write_matrix_maf(Phat, "Phat.txt");
 	write_matrix(Qhat, "Qhat.txt");
 
 	mm.clean_up();
