@@ -1,18 +1,18 @@
 ## Real Datasets
 
-We have included several scripts to regenereate the real datasets and parameters used in our manuscript.
+We have included several scripts to regenerate the real datasets and parameters used in our manuscript.
 
 ### HGDP
 
-This subdirectory contains a script to generate the Human Genome Diversity Project (HGDP) dataset. We also include `hgdp_param.txt.gz`, which is the paremeter file used in our manuscript that can be used with our simulation scripts found in `misc/simulations` from the root of the repository.
+This subdirectory contains a script to generate the Human Genome Diversity Project (HGDP) dataset. We also include `hgdp_param.txt.gz`, which is the parameter file used in our manuscript that can be given as input to our simulation scripts found in `misc/simulations` from the root of the repository.
 
 ### HO
 
-This subdirectory contains a script to generate the Human Origins (HO) dataset. We have included `ho_remove.samps`, which contains manually curated samples to be removed (_e.g._ non-human samples). We also include a binary,`convertrf`, from the EIGENSOFT suite for converting the EIGENSTRAT format.
+This subdirectory contains a script to generate the Human Origins (HO) dataset. We have included `ho_remove.samps`, which contains manually curated samples to be removed (_e.g._ non-human samples). We also include a binary,`convertrf`, from the [EIGENSOFT suite](https://www.hsph.harvard.edu/alkes-price/software/) for converting the EIGENSTRAT format.
 
 ### TGP
 
-This subdirectory contains a script to generate the 1000 Genomes Project (TGP) dataset. The script, `get_tgp.sh`, will download and convert the data to a PLINK binary fileset. The script, `gen_tgp_plink_metrics.sh`, will generate frequencies and F<sub>ST</sub> values based on population and superpopulation labels found in `tgp_pops.txt` and `tgp_super_pops.txt`, respectively. `TGP_unrel.txt` contains a manually curated list of unrelated individuals curated by the authors of TeraStructure.
+This subdirectory contains a script to generate the 1000 Genomes Project (TGP) dataset. The script, `get_tgp.sh`, will download and convert the data to a PLINK binary fileset. The script, `gen_tgp_plink_metrics.sh`, will generate frequencies and F<sub>ST</sub> values based on population and superpopulation labels found in `tgp_pops.txt` and `tgp_super_pops.txt`, respectively. It will also generate the parameter files used by our simulations scripts found in `misc/simulations`. `TGP_unrel.txt` contains a manually curated list of unrelated individuals curated by the authors of [TeraStructure](https://github.com/StoreyLab/terastructure).
 
 ### UKB
 
