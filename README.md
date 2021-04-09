@@ -33,7 +33,7 @@ cmake ..
 make
 ```
 
-An example script can be found in the `examples` subdirectory to test SCOPE.
+An example script can be found in the `examples` subdirectory to test SCOPE. We have additionally included several scripts that can regenerate the simulations and real datasets we used in our manuscript. Please see the subdirectories in `misc` for more detail.
 
 ## Documentation for SCOPE
 
@@ -43,7 +43,7 @@ SCOPE can be run the from the command line using the following options. At minim
 
 ```
 * genotype (-g) : Path to PLINK binary prefix
-* frequencies (-freq) : Path to PLINK MAF file for supervision (default: none)
+* frequencies (-freq) : Path to PLINK frequency file for supervision (default: none)
 * num_evec (-k) : Number of latent populations (default: 5)
 * max_iterations (-m) : Maximum number of iterations for ALS (default: 1000)
 * convergence_limit (-cl) : Convergence threshold for LSE and ALS (default: 0.00001)
@@ -52,7 +52,7 @@ SCOPE can be run the from the command line using the following options. At minim
 * seed (-seed): Seed to use (default: system time)
 ```
 
-To perform supervised population structure inference, provide the `-freq` parameter. The file needed for this parameter can be generated using `plink --maf`. If no frequency file provided, SCOPE will perform unsupervised population structure inference.
+To perform supervised population structure inference, provide the `-freq` parameter. The file needed for this parameter can be generated using `plink --freq`. If no frequency file provided, SCOPE will perform unsupervised population structure inference.
 
 ### Output
 
