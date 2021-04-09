@@ -17,5 +17,5 @@ The other script `simulateB.py` generated simulations under a spatial model as d
 
 ### PLINK Conversion Script
 
-SCOPE can take the output from `plink --maf` as input to perform supervised analysis. The script `generate_plink_frq.py` will convert output from previous SCOPE runs to match the output from `plink --maf`. It requires the path to the PLINK BIM file, the outputted frequencies, and the output filename as input.
+SCOPE can take the output from `plink --freq` as input to perform supervised analysis. The script `generate_plink_frq.py` will convert output from previous SCOPE runs to match the output from `plink --freq`. It requires the path to the PLINK BIM file, the outputted frequencies, and the output filename as input.
 
