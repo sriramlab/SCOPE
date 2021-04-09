@@ -10,6 +10,8 @@ set.seed(1)
 png("tgp_n10k_10k.png",units = "in",height=8.5,width=11,res=330)
 par(mfrow=c(6,1),mai=c(0.1,0.1,0.2,0.1))
 
+## Replace the arguments to the 'fread' function
+
 truth <- fread("tgp_n10k_10k_snps_proportions.txt",data.table = F)
 ordering <- hclust(dist(truth))$order # Replace with gclust for scalablity
 colIS <- brewer.pal(ncol(truth), "Paired")

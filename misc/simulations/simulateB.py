@@ -59,7 +59,7 @@ def seeded_binom(i,p):
 
 if __name__=='__main__':
 
-	parser = argparse.ArgumentParser(description="Genotype simulation under BN-PSD model (Simulation B)")
+	parser = argparse.ArgumentParser(description="Genotype simulation under spatial model (Simulation B)")
 
 	parser.add_argument("n_ind",help="number of individuals",type=int)
 	parser.add_argument("n_snps",help="number of SNPs",type=int)
