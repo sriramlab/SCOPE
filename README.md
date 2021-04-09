@@ -33,6 +33,8 @@ cmake ..
 make
 ```
 
+An example script can be found in the `examples` subdirectory to test SCOPE.
+
 ## Documentation for SCOPE
 
 ### Parameters
