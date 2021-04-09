@@ -278,7 +278,7 @@ void ALStructure::printCorrectUsage(void) {
 			  << "-cl <convergence limit> Convergence threshold for LSE and ALS (default: 0.00001)\n"
 			  << "-nt <number of threads> Number of threads to use (default: 1)\n"
        			  << "-seed <seed> Seed to use (default: system time)\n"
-			  << "-freq <PLINK MAF file> Path to PLINK MAF file for supervision (default: none)\n"
+			  << "-freq <frequency file> Path to PLINK frequency file for supervision (default: none)\n"
 			  << "-o <output_path> Output prefix (default: scope_)\n";
 }
 
