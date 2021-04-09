@@ -3,7 +3,7 @@
 SCOPE is a method for performing scalable population structure inference on biobank-scale genomic data. SCOPE utilizes a likelihood-free framework that involves estimation of the individual allele frequency (IAF) matrix through a modified version of principal component analysis (PCA) known as latent subspace estimation (LSE) followed by alternating least squares (ALS) to transform the estimated IAF matrix into ancestral allele frequencies and admixture proportions. SCOPE utilizes two major optimizations to enable scalable inference. Firstly, SCOPE uses randomized eigendecomposition to efficiently estimate the latent subspace. Second, SCOPE uses the Mailman algorithm for fast matrix-vector multiplication involving the genotype matrix. 
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 This code is based on contributions from the following sources:
 * [Eigen](http://eigen.tuxfamily.org/) - C++ template library for linear algebra
