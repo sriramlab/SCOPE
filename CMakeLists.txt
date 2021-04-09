@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 2.8.12)
-project(ProPCA)
+project(SCOPE)
 
-set(SPECTRA_INC "/home/alecmchiu/lib/include")
-
-include_directories(include/ ${SPECTRA_INC})
+include_directories(include/)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(CMAKE_CXX_FLAGS "-std=c++0x -O3")
@@ -21,6 +19,4 @@ IF (NOT DEFINED DEBUG)
 ENDIF()
 ADD_DEFINITIONS(-DDEBUG=${DEBUG})
 
-#add_executable(run_propca src/run_propca.cpp src/propca.cpp src/matmult.cpp src/genotype.cpp src/storage.cpp)
-
-add_executable(run_alstructure src/run_alstructure.cpp src/alstructure.cpp src/matmult.cpp src/genotype.cpp src/storage.cpp)
+add_executable(scope src/run_alstructure.cpp src/alstructure.cpp src/matmult.cpp src/genotype.cpp src/storage.cpp)
