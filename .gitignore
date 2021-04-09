@@ -9,3 +9,4 @@
 !/src
 !/misc
 */.vscode
+.DS_Store
