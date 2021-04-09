@@ -1,6 +1,6 @@
 ### Contents
 
-+ `metrics.R` contains several of the scripts used to evaluate results
++ `metrics.R` contains several of the functions used to evaluate results
 + `visualize.R` contains an example for visualizing our results
 
 #### Metrics
