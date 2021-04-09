@@ -1,10 +1,18 @@
 # SCOPE - (SCalable pOPulation structure inferencE)
 
-SCOPE is a method for performing scalable population structure inference on biobank-scale genomic data. SCOPE is able to perform 
+SCOPE is a method for performing scalable population structure inference on biobank-scale genomic data. SCOPE utilizes a likelihood-free framework that involves estimation of the individual allele frequency (IAF) matrix through a modified version of principal component analysis (PCA) known as latent subspace estimation (LSE) followed by alternating least squares (ALS) to transform the estimated IAF matrix into ancestral allele frequencies and admixture proportions. SCOPE utilizes two major optimizations to enable scalable inference. Firstly, SCOPE uses randomized eigendecomposition to efficiently estimate the latent subspace. Second, SCOPE uses the Mailman algorithm for fast matrix-vector multiplication involving the genotype matrix. 
 
-### Prerequisites
+## License
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
-The following packages are required on a linux machine to compile and use the software package.
+This code is based on contributions from the following sources:
+* [Eigen](http://eigen.tuxfamily.org/) - C++ template library for linear algebra
+* [Spectra](https://spectralib.org/) - C++ Library For Large Scale Eigenvalue Problems
+* [ProPCA](https://github.com/sriramlab/ProPCA) - Scalable probabilistic PCA for large-scale genetic variation data 
+
+## Prerequisites
+
+The following packages are required on a Linux machine to compile and use SCOPE.
 
 ```
 g++
@@ -12,9 +20,9 @@ cmake
 make
 ```
 
-### Installing
+## Installing
 
-Installing SCOPE is fairly simple. Just issue the following commands on a linux machine
+To install SCOPE, run the following commands:
 
 ```
 git clone https://github.com/sriramlab/SCOPE.git
@@ -25,64 +33,33 @@ cmake ..
 make
 ```
 
-## Documentation for ProPCA
-
-After compiling the executable propca is present in the build directory.
-Running the propca is fairly simple and can be done in two different ways
-
-* ``./propca -p <parameter_file>``
-* ``./propca <various_command_line arguments>``
+## Documentation for SCOPE
 
 ### Parameters
 
-The values in the brackets are the command line flags for running the code without the parameter file.
+SCOPE can be run the from the command line using the following options. At minimum, SCOPE require the path to the PLINK binary prefix.
 
 ```
-* genotype (-g) : The path of the genotype file or plink bed file prefix
-* num_evec (-k) : The number of eigen vectors to output (default: 5)
-* l (-l) : The extra calculation to be performed so that k_effective  = k + l (default: num_evec)
-* max_iterations (-m) : The maximum number of iterations to run the EM for (default: num_evec + 2)
-* debug (-v) : Enabling debug mode to output various debug informations (default: false). Need to build with DEBUG=1 as described above for this flag to work.
-* accuracy (-a) : Output the likelihood computation as a function of iterations (default: false)
-* convergence_limit (-cl) : The value of the threshold telling the algorithm that it has converged (default: -1, meaning no auto termination condition )
-* output_path (-o) : The output prefix along with the path where the results will be stored
-* accelerated_em (-aem) : The flag stating whether to use accelerated EM or not (default: 0).
-* var_normalize (-vn) : The flag stating whether to perform varinance normalization or not (default: false).
-* fast_mode (-nfm) : The flag whether to use a fast mode for the EM algorithm(default: true). Note: Setting the -nfm (NOT fast_mode) at command line will use a slow version of EM.
-* missing (-miss) : This flag states whether there is any missing data present in the genotype matrix or not. 
-* text_version (-txt) : This flag makes the input genotype file to be in the text format as described below. If not used, plink format will be used. (default: false)
-* memory_efficient (-mem) : The flag states whether to use a memory effecient version for the EM algorithm or not. The memory efficient version is a little slow than the not efficient version (default: false)
+* genotype (-g) : Path to PLINK binary prefix
+* frequencies (-freq) : Path to PLINK MAF file for supervision (default: none)
+* num_evec (-k) : Number of latent populations (default: 5)
+* max_iterations (-m) : Maximum number of iterations for ALS (default: 1000)
+* convergence_limit (-cl) : Convergence threshold for LSE and ALS (default: 0.00001)
+* output_path (-o) : Output prefix (default: scope_)
 * nthreads (-nt): Number of threads to use (default: 1)
 * seed (-seed): Seed to use (default: system time)
-
 ```
 
-An example parameter file is provided in the examples directory.
+To perform supervised population structure inference, provide the `-freq` parameter. The file needed for this parameter can be generated using `plink --maf`. If no frequency file provided, SCOPE will perform unsupervised population structure inference.
 
-You can run the code using the command:
+## Output
 
-```
-../build/propca -p par.txt
-``` 
+SCOPE will output the following files:
 
-The equivalent command to issue for running the same code from the examples directory is:
+* `scope_V.txt`: the estimated latent subspace from LSE
+* `scope_Phat.txt`: the estimated minor allele frequencies for the latent populations
+* `scope_Qhat.txt`: the estimated admixture proportions for each individual
 
-```
-../build/propca -g example.geno -k 5 -l 2 -m 20 -a -cl 0.001 -o example_ -aem 1 -vn -nfm -txt
-```
+Each column of `Phat.txt` corresponds to a row of `Qhat.txt`. If `Qhat.txt` is transposed, the columns will correspond to the columns of `Phat.txt`. If running SCOPE in supervised mode, the order of the colums in `Phat.txt` corresponds to the order displayed in the PLINK MAF file.
 
-ProPCA wil generate three files containing the eigenvectors/principal components, projections, and eigenvalues.
 
-#### Second:
-
-The inout can be in the plink binary format, as descibed at [Plink BED](https://www.cog-genomics.org/plink/1.9/input#bed)
-
-Make sure to set the text_version to false in the parameter file, or don't use the -txt command line flag, when running. 
-
-## S
-
-* [Eigen](http://eigen.tuxfamily.org/) - The Linear algebra library for C++
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
