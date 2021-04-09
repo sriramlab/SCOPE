@@ -39,7 +39,7 @@ An example script can be found in the `examples` subdirectory to test SCOPE. We 
 
 ### Parameters
 
-SCOPE can be run the from the command line using the following options. At minimum, SCOPE require the path to the PLINK binary prefix.
+SCOPE can be run the from the command line using the following options. At minimum, SCOPE requires the path to the PLINK binary prefix.
 
 ```
 * genotype (-g) : Path to PLINK binary prefix
@@ -52,7 +52,7 @@ SCOPE can be run the from the command line using the following options. At minim
 * seed (-seed): Seed to use (default: system time)
 ```
 
-To perform supervised population structure inference, provide the `-freq` parameter. The file needed for this parameter can be generated using `plink --freq`. If no frequency file provided, SCOPE will perform unsupervised population structure inference.
+To perform supervised population structure inference, provide the `-freq` parameter. The file needed for this parameter can be generated using `plink --freq`. If no frequency file is provided, SCOPE will perform unsupervised population structure inference.
 
 ### Output
 
@@ -62,6 +62,6 @@ SCOPE will output the following files:
 * `scope_Phat.txt`: the estimated allele frequencies for the latent populations
 * `scope_Qhat.txt`: the estimated admixture proportions for each individual
 
-Each column of `Phat.txt` corresponds to a row of `Qhat.txt`. If `Qhat.txt` is transposed, the columns will correspond to the columns of `Phat.txt`. If running SCOPE in supervised mode, the order of the colums in `Phat.txt` corresponds to the order displayed in the PLINK MAF file.
+Each column of `Phat.txt` corresponds to a row of `Qhat.txt`. If `Qhat.txt` is transposed, the columns will correspond to the columns of `Phat.txt`. If running SCOPE in supervised mode, the order of the columns in `Phat.txt` corresponds to the order displayed in the PLINK frequency file.
 
 
