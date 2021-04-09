@@ -1,5 +1,7 @@
 # SCOPE - (SCalable pOPulation structure inferencE)
 
+SCOPE is a method for performing scalable population structure inference on biobank-scale genomic data. SCOPE is able to perform 
+
 ### Prerequisites
 
 The following packages are required on a linux machine to compile and use the software package.
@@ -77,7 +79,7 @@ The inout can be in the plink binary format, as descibed at [Plink BED](https://
 
 Make sure to set the text_version to false in the parameter file, or don't use the -txt command line flag, when running. 
 
-## Built With
+## S
 
 * [Eigen](http://eigen.tuxfamily.org/) - The Linear algebra library for C++
 
