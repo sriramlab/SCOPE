@@ -59,7 +59,7 @@ To perform supervised population structure inference, provide the `-freq` parame
 SCOPE will output the following files:
 
 * `scope_V.txt`: the estimated latent subspace from LSE
-* `scope_Phat.txt`: the estimated minor allele frequencies for the latent populations
+* `scope_Phat.txt`: the estimated allele frequencies for the latent populations
 * `scope_Qhat.txt`: the estimated admixture proportions for each individual
 
 Each column of `Phat.txt` corresponds to a row of `Qhat.txt`. If `Qhat.txt` is transposed, the columns will correspond to the columns of `Phat.txt`. If running SCOPE in supervised mode, the order of the colums in `Phat.txt` corresponds to the order displayed in the PLINK MAF file.
