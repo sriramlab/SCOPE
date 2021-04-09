@@ -54,7 +54,7 @@ SCOPE can be run the from the command line using the following options. At minim
 
 To perform supervised population structure inference, provide the `-freq` parameter. The file needed for this parameter can be generated using `plink --maf`. If no frequency file provided, SCOPE will perform unsupervised population structure inference.
 
-## Output
+### Output
 
 SCOPE will output the following files:
 
