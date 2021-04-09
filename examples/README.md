@@ -4,7 +4,7 @@ We provide example source files in `source_files`. The script `run_scope_example
 
 ### Source Files
 
-These example files in `source_files` were generated using the `simulateA.py` script found in `misc/simulations` from the root of the repository. The PLINK formatted frequency file was generated using the `generate_plink_frq.py` script found in `misc/simulations` from the root of the repository.
+The example files in `source_files` were generated using the `simulateA.py` script found in `misc/simulations` from the root of the repository. The PLINK formatted frequency file was generated using the `generate_plink_frq.py` script found in `misc/simulations` from the root of the repository.
 
 #### Contents
 
@@ -15,7 +15,7 @@ These example files in `source_files` were generated using the `simulateA.py` sc
 
 ### Results
 
-This subdirectory contains the expected output from running `run_scope_example.sh`.
+The `results` subdirectory contains the expected output from running `run_scope_example.sh`.
 
 + `*_Phat.txt` are the estimated minor allele frequencies
 + `*_V.txt` is the estimated latent subspace
