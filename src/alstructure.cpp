@@ -143,7 +143,7 @@ ALStructure::ALStructure(int argc, char const *argv[]) {
 	// Set default values
 	command_line_opts.num_of_evec = 5;
 	command_line_opts.debugmode = false;
-	command_line_opts.OUTPUT_PATH = "alstructure_";
+	command_line_opts.OUTPUT_PATH = "scope_";
 	bool got_genotype_file = false;
 	bool got_rowspace_file = false;
 	bool got_freq_file = false;
@@ -271,13 +271,15 @@ ALStructure::ALStructure(int argc, char const *argv[]) {
 
 
 void ALStructure::printCorrectUsage(void) {
-	std::cout << "Correct Usage: "
-			  << "run_alstructure \\\n"
-			  << "    -g <genotype file> \\\n"
-			  << "    -k <latent dimension> \\\n"
-			  << "    -m <maximum number of iterations> \\\n"
-			  << "    -v (for debug mode) \\\n"
-			  << std::endl;
+	std::cout << "SCOPE Options:\n"
+			  << "-g <genotype file> Path to PLINK binary prefix\n"
+			  << "-k <latent dimension> Number of latent population (default: 5)\n"
+			  << "-m <max iterations> Maximum number of iterations for ALS (default: 1000)\n"
+			  << "-cl <convergence limit> Convergence threshold for LSE and ALS (default: 0.00001)\n"
+			  << "-nt <number of threads> Number of threads to use (default: 1)\n"
+       			  << "-seed <seed> Seed to use (default: system time)\n"
+			  << "-freq <PLINK MAF file> Path to PLINK MAF file for supervision (default: none)\n"
+			  << "-o <output_path> Output prefix (default: scope_)\n";
 }
 
 
