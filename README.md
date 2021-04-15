@@ -15,7 +15,7 @@ This code is based on contributions from the following sources:
 The following packages are required on a Linux machine to compile and use SCOPE.
 
 ```
-g++
+g++ (>=4.5)
 cmake
 make
 ```
