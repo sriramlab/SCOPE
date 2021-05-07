@@ -1,6 +1,6 @@
 ## Example Files
 
-We provide example source files in `source_files`. The script `run_scope_examples.sh` will run SCOPE both unsupervised and supervised. This script may need to be modified to correctly point to the path of your SCOPE binary. Expected output from this script can be found in `results` under their respective folders.
+We provide example source files in `source_files`. The script `run_scope_examples.sh` will run SCOPE both unsupervised and supervised. The script should complete almost immediately, but may need to be modified to correctly point to the path of your SCOPE binary. Expected output from this script can be found in `results` under their respective folders.
 
 ### Source Files
 
