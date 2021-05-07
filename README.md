@@ -16,9 +16,10 @@ The following packages are required on a Linux machine to compile and use SCOPE.
 
 ```
 g++ (>=4.5)
-cmake
-make
+cmake (>=2.8.12)
+make (>=3.81)
 ```
+SCOPE has been tested on CentOS 6.10 and 7, g++ 4.8.5 and 4.9.3, make 3.81 and 3.82, and cmake 2.8.12.2 and 3.7.2.
 
 ## Installing
 
@@ -33,7 +34,7 @@ cmake ..
 make
 ```
 
-An example script can be found in the `examples` subdirectory to test SCOPE. We have additionally included several scripts that can regenerate the simulations and real datasets we used in our manuscript. Please see the subdirectories in `misc` for more detail.
+SCOPE should finish compiling within a few minutes. An example script can be found in the `examples` subdirectory to test SCOPE. We have additionally included several scripts that can regenerate the simulations and real datasets we used in our manuscript. Please see the subdirectories in `misc` for more detail.
 
 ## Documentation for SCOPE
 
