@@ -53,7 +53,7 @@ SCOPE can be run the from the command line using the following options. At minim
 * seed (-seed): Seed to use (default: system time)
 ```
 
-To perform supervised population structure inference, provide the `-freq` parameter. The file needed for this parameter can be generated using `plink --freq --within`. If no frequency file is provided, SCOPE will perform unsupervised population structure inference.
+To perform supervised population structure inference, provide the `-freq` parameter. The file needed for this parameter can be generated using `plink --freq --within`. If no frequency file is provided, SCOPE will perform unsupervised population structure inference. When using the supervised mode, be sure to make sure that the ordering of the SNPs match between the frequency file and the target dataset. Alleles much also be coded consistently between the two. One can flip alleles using the `--flip` and `--flip-subset` commands in PLINK.
 
 ### Output
 
